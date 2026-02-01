@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessible Jupyter Notebooks</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Accessible Jupyter Notebooks</h1>
+        <p>A screen reader friendly interface for Jupyter notebooks</p>
+    </header>
+
+    <main>
+        <!-- Status and controls -->
+        <section aria-labelledby="controls-heading">
+            <h2 id="controls-heading">Kernel Controls</h2>
+
+            <div class="controls">
+                <button id="start-kernel-btn" class="control-btn">Start Kernel</button>
+                <button id="restart-kernel-btn" class="control-btn">Restart Kernel</button>
+                <button id="shutdown-kernel-btn" class="control-btn">Shutdown Kernel</button>
+                <span id="kernel-status" class="status-indicator" role="status" aria-live="polite">
+                    Kernel: Not Started
+                </span>
+            </div>
+        </section>
+
+        <!-- Notebook cells -->
+        <section aria-labelledby="notebook-heading">
+            <h2 id="notebook-heading">Notebook Cells</h2>
+
+            <table class="notebook">
+                <thead>
+                    <tr>
+                        <th scope="col">Actions</th>
+                        <th scope="col">Code and Output</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Cell 1 -->
+                    <tr data-cell-type="code" data-mode="edit">
+                        <td class="toolbar">
+                            <div class="cell-type-indicator" aria-live="polite">
+                                <strong>Type:</strong> <span class="type-label">Code</span>
+                            </div>
+                            <button class="run-btn" data-cell="1" aria-label="Run cell 1">
+                                Run<br><small>(Ctrl+Enter)</small>
+                            </button>
+                            <button class="toggle-type-btn" data-cell="1" aria-label="Toggle cell type (Ctrl+Space)">
+                                Code/Markdown<br><small>(Ctrl+Space)</small>
+                            </button>
+                            <button class="edit-btn" data-cell="1" aria-label="Edit cell" style="display: none;">
+                                Edit<br><small>(Enter)</small>
+                            </button>
+                        </td>
+                        <td class="cell-content">
+                            <pre
+                                id="code-1"
+                                class="code-input"
+                                contenteditable="true"
+                                spellcheck="false">2 + 2</pre>
+                            <hr>
+                            <output id="output-1"></output>
+                        </td>
+                    </tr>
+
+                    <!-- Cell 2 -->
+                    <tr data-cell-type="code" data-mode="edit">
+                        <td class="toolbar">
+                            <div class="cell-type-indicator" aria-live="polite">
+                                <strong>Type:</strong> <span class="type-label">Code</span>
+                            </div>
+                            <button class="run-btn" data-cell="2" aria-label="Run cell 2">
+                                Run<br><small>(Ctrl+Enter)</small>
+                            </button>
+                            <button class="toggle-type-btn" data-cell="2" aria-label="Toggle cell type (Ctrl+Space)">
+                                Code/Markdown<br><small>(Ctrl+Space)</small>
+                            </button>
+                            <button class="edit-btn" data-cell="2" aria-label="Edit cell" style="display: none;">
+                                Edit<br><small>(Enter)</small>
+                            </button>
+                        </td>
+                        <td class="cell-content">
+                            <pre
+                                id="code-2"
+                                class="code-input"
+                                contenteditable="true"
+                                spellcheck="false">print("Hello, world!")</pre>
+                            <hr>
+                            <output id="output-2"></output>
+                        </td>
+                    </tr>
+
+                    <!-- Cell 3 -->
+                    <tr data-cell-type="code" data-mode="edit">
+                        <td class="toolbar">
+                            <div class="cell-type-indicator" aria-live="polite">
+                                <strong>Type:</strong> <span class="type-label">Code</span>
+                            </div>
+                            <button class="run-btn" data-cell="3" aria-label="Run cell 3">
+                                Run<br><small>(Ctrl+Enter)</small>
+                            </button>
+                            <button class="toggle-type-btn" data-cell="3" aria-label="Toggle cell type (Ctrl+Space)">
+                                Code/Markdown<br><small>(Ctrl+Space)</small>
+                            </button>
+                            <button class="edit-btn" data-cell="3" aria-label="Edit cell" style="display: none;">
+                                Edit<br><small>(Enter)</small>
+                            </button>
+                        </td>
+                        <td class="cell-content">
+                            <pre
+                                id="code-3"
+                                class="code-input"
+                                contenteditable="true"
+                                spellcheck="false">x = 42
+print(f"x = {x}")
+x * 2</pre>
+                            <hr>
+                            <output id="output-3"></output>
+                        </td>
+                    </tr>
+
+                    <!-- Cell 4 -->
+                    <tr data-cell-type="code" data-mode="edit">
+                        <td class="toolbar">
+                            <div class="cell-type-indicator" aria-live="polite">
+                                <strong>Type:</strong> <span class="type-label">Code</span>
+                            </div>
+                            <button class="run-btn" data-cell="4" aria-label="Run cell 4">
+                                Run<br><small>(Ctrl+Enter)</small>
+                            </button>
+                            <button class="toggle-type-btn" data-cell="4" aria-label="Toggle cell type (Ctrl+Space)">
+                                Code/Markdown<br><small>(Ctrl+Space)</small>
+                            </button>
+                            <button class="edit-btn" data-cell="4" aria-label="Edit cell" style="display: none;">
+                                Edit<br><small>(Enter)</small>
+                            </button>
+                        </td>
+                        <td class="cell-content">
+                            <pre
+                                id="code-4"
+                                class="code-input"
+                                contenteditable="true"
+                                spellcheck="false">import math
+math.pi</pre>
+                            <hr>
+                            <output id="output-4"></output>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Accessible Notebooks - Built for screen reader users</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
