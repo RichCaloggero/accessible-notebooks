@@ -12,6 +12,7 @@ const notebookTable = document.querySelector('.notebook tbody');
 
 // State
 let kernelAlive = false;
+let activeCell = null;
 
 // Update kernel status display
 function updateKernelStatus(alive) {
@@ -128,26 +129,27 @@ function toggleCellType(cellNumber) {
     setCellType(cellNumber, newType);
 }
 
-// Enter edit mode (for rendered markdown cells)
+// Enter edit mode for any cell
 function enterEditMode(cellNumber) {
     const row = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`).closest('tr');
     const codeInput = document.getElementById(`code-${cellNumber}`);
     const outputElement = document.getElementById(`output-${cellNumber}`);
     const editBtn = row.querySelector('.edit-btn');
+    const cellType = getCellType(cellNumber);
 
-    // Show input, hide output
+    if (cellType === 'markdown' && row.dataset.mode === 'rendered') {
+        // Markdown cell in rendered mode: clear output, show and focus input
+        outputElement.textContent = '';
+        outputElement.classList.remove('has-output', 'markdown-rendered');
+        outputElement.removeAttribute('aria-live');
+        editBtn.style.display = 'none';
+        row.dataset.mode = 'edit';
+    }
+
+    // Always show, make editable, and focus the pre element
     codeInput.hidden = false;
     codeInput.contentEditable = 'true';
-    outputElement.textContent = '';
-    outputElement.classList.remove('has-output', 'markdown-rendered');
-
-    // Hide edit button
-    editBtn.style.display = 'none';
-
-    // Update mode
-    row.dataset.mode = 'edit';
-
-    // Focus the input
+    codeInput.setAttribute('tabindex', '0');
     codeInput.focus();
 }
 
@@ -177,36 +179,61 @@ async function executeCell(cellNumber) {
 
         // Handle markdown cells
         if (cellType === 'markdown') {
-            console.log('Rendering markdown...');
-            const response = await fetch(`${API_BASE}/render-markdown`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ markdown: code })
-            });
+            console.log('Rendering markdown client-side...');
 
-            const result = await response.json();
-            console.log('Markdown render result:', result);
+            try {
+                // Normalize line endings: Windows CRLF to Unix LF
+                let cleanedMarkdown = code.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-            if (result.status === 'ok') {
-                console.log('Markdown rendered successfully, HTML length:', result.html.length);
-                // Render markdown
-                outputElement.innerHTML = result.html;
+                // Strip trailing whitespace from each line
+                let lines = cleanedMarkdown.split('\n');
+                lines = lines.map(line => line.trimEnd());
+
+                // Remove consecutive blank lines (keep max 1)
+                let resultLines = [];
+                let prevBlank = false;
+                for (let line of lines) {
+                    let isBlank = line.length === 0;
+                    if (!(isBlank && prevBlank)) {
+                        resultLines.push(line);
+                    }
+                    prevBlank = isBlank;
+                }
+                cleanedMarkdown = resultLines.join('\n');
+
+                console.log('Cleaned markdown:', cleanedMarkdown);
+
+                // Render markdown to HTML using marked.js
+                let html = marked.parse(cleanedMarkdown);
+
+                // Remove whitespace between HTML tags
+                html = html.replace(/>\s+</g, '><');
+
+                console.log('Rendered HTML:', html);
+
+                // Display the rendered HTML
+                outputElement.innerHTML = html;
                 outputElement.classList.add('markdown-rendered');
+
+                // Set aria-live="off" to prevent double speaking
+                outputElement.setAttribute('aria-live', 'off');
 
                 // Hide input and make it non-editable
                 codeInput.hidden = true;
                 codeInput.contentEditable = 'false';
+                codeInput.setAttribute('tabindex', '-1');
 
                 // Show edit button
                 row.querySelector('.edit-btn').style.display = 'block';
 
                 // Update mode
                 row.dataset.mode = 'rendered';
-            } else {
-                console.error('Markdown render error:', result.error);
-                outputElement.textContent = `Error: ${result.error}`;
+
+                // Focus the output for markdown cells
+                outputElement.focus();
+            } catch (error) {
+                console.error('Markdown render error:', error);
+                outputElement.textContent = `Error: ${error.message}`;
                 outputElement.classList.add('has-error');
             }
 
@@ -226,6 +253,9 @@ async function executeCell(cellNumber) {
         });
 
         const result = await response.json();
+
+        // Remove aria-live for code cells to prevent double speaking
+        outputElement.removeAttribute('aria-live');
 
         // Display output
         if (result.status === 'ok') {
@@ -337,13 +367,65 @@ if (notebookTable) {
             toggleCellType(cellNumber);
         }
 
-        // Enter: Enter edit mode (only for rendered markdown cells)
-        if (e.key === 'Enter' && !e.ctrlKey && row.dataset.mode === 'rendered') {
+        // Enter: Enter edit mode (only if not already in the code input)
+        if (e.key === 'Enter' && !e.ctrlKey) {
+            const codeInput = document.getElementById(`code-${cellNumber}`);
+            // If we're in the code input, let Enter insert a newline (default behavior)
+            if (e.target === codeInput) {
+                return; // Don't prevent default, allow newline insertion
+            }
+            // Otherwise, enter edit mode
             e.preventDefault();
             enterEditMode(cellNumber);
         }
     });
 }
 
+// Set active cell and update tabindex for focus management
+function setActiveCell(cellNumber) {
+    if (activeCell === cellNumber) return;
+
+    // Get all code inputs and outputs
+    const allCodeInputs = document.querySelectorAll('.code-input');
+    const allOutputs = document.querySelectorAll('output');
+
+    // Set all to tabindex="-1"
+    allCodeInputs.forEach(input => input.setAttribute('tabindex', '-1'));
+    allOutputs.forEach(output => output.setAttribute('tabindex', '-1'));
+
+    // Set active cell to tabindex="0"
+    const codeInput = document.getElementById(`code-${cellNumber}`);
+    const outputElement = document.getElementById(`output-${cellNumber}`);
+
+    if (codeInput) codeInput.setAttribute('tabindex', '0');
+    if (outputElement) outputElement.setAttribute('tabindex', '0');
+
+    activeCell = cellNumber;
+}
+
+// Listen for focus events on code inputs to set active cell
+document.addEventListener('focus', (e) => {
+    if (e.target.classList.contains('code-input')) {
+        const cellNumber = e.target.id.replace('code-', '');
+        setActiveCell(cellNumber);
+    }
+
+    // When output gains focus, ensure pre is hidden/uneditable for markdown cells
+    if (e.target.tagName === 'OUTPUT') {
+        const cellNumber = e.target.id.replace('output-', '');
+        const row = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`).closest('tr');
+        const codeInput = document.getElementById(`code-${cellNumber}`);
+        const cellType = getCellType(cellNumber);
+
+        // For markdown cells in rendered mode, ensure pre is hidden/uneditable
+        if (cellType === 'markdown' && row.dataset.mode === 'rendered') {
+            codeInput.hidden = true;
+            codeInput.contentEditable = 'false';
+            codeInput.setAttribute('tabindex', '-1');
+        }
+    }
+}, true);
+
 // Initialize
 checkStatus();
+setActiveCell('1');  // Set first cell as active on load

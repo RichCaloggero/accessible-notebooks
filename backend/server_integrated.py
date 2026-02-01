@@ -81,30 +81,15 @@ def execute_code():
 
 @app.route('/api/render-markdown', methods=['POST'])
 def render_markdown():
-    """Render markdown to HTML."""
-    data = request.get_json()
-
-    if not data or 'markdown' not in data:
-        return jsonify({
-            'status': 'error',
-            'error': 'Missing markdown parameter',
-            'html': ''
-        }), 400
-
-    markdown_text = data['markdown']
-
-    try:
-        html = markdown.markdown(markdown_text, extensions=['fenced_code', 'tables'])
-        return jsonify({
-            'status': 'ok',
-            'html': html
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': str(e),
-            'html': ''
-        }), 500
+    """
+    Legacy endpoint - markdown rendering now done client-side.
+    Kept for backwards compatibility.
+    """
+    return jsonify({
+        'status': 'error',
+        'error': 'Markdown rendering is now done client-side',
+        'html': ''
+    }), 410  # 410 Gone - endpoint deprecated
 
 
 @app.route('/api/restart', methods=['POST'])

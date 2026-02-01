@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accessible Jupyter Notebooks</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Markdown library for client-side rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
 </head>
 <body>
     <header>
@@ -60,9 +62,10 @@
                                 id="code-1"
                                 class="code-input"
                                 contenteditable="true"
-                                spellcheck="false">2 + 2</pre>
+                                spellcheck="false"
+                                tabindex="0">2 + 2</pre>
                             <hr>
-                            <output id="output-1"></output>
+                            <output id="output-1" tabindex="0"></output>
                         </td>
                     </tr>
 
@@ -87,9 +90,10 @@
                                 id="code-2"
                                 class="code-input"
                                 contenteditable="true"
-                                spellcheck="false">print("Hello, world!")</pre>
+                                spellcheck="false"
+                                tabindex="-1">print("Hello, world!")</pre>
                             <hr>
-                            <output id="output-2"></output>
+                            <output id="output-2" tabindex="-1"></output>
                         </td>
                     </tr>
 
@@ -114,11 +118,12 @@
                                 id="code-3"
                                 class="code-input"
                                 contenteditable="true"
-                                spellcheck="false">x = 42
+                                spellcheck="false"
+                                tabindex="-1">x = 42
 print(f"x = {x}")
 x * 2</pre>
                             <hr>
-                            <output id="output-3"></output>
+                            <output id="output-3" tabindex="-1"></output>
                         </td>
                     </tr>
 
@@ -143,10 +148,11 @@ x * 2</pre>
                                 id="code-4"
                                 class="code-input"
                                 contenteditable="true"
-                                spellcheck="false">import math
+                                spellcheck="false"
+                                tabindex="-1">import math
 math.pi</pre>
                             <hr>
-                            <output id="output-4"></output>
+                            <output id="output-4" tabindex="-1"></output>
                         </td>
                     </tr>
                 </tbody>
