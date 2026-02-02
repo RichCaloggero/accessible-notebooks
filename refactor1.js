@@ -91,7 +91,15 @@ function getCellToolbar (cell) {
     return cell.querySelector(".toolbar");
 } // getCellToolbar 
 
-// predicates
+function getCellType (cell) {
+	return cell.dataset.type;
+	} // getCellType
+
+function setCellType (cell, type) {
+	cell.dataset.type = type;
+	} // setCellType
+
+	// predicates
 
 function isCell (x) {
     return x.matches(".cell");
@@ -105,9 +113,39 @@ function isToolbarContainer (x) {
     return x.matches(".toolbar");
 } // isToolbarContainer
 
+function isEditModeEnabled (cell) {
+	return getCodeContainer(cell).hasAttribute("contenteditable");
+} // isEditModeEnabled
+
+
 // cell actions
 
-// event handlers
+function executeCell (cell) {
+	// use what we have for now
+
+} // executeCell
+
+function enableEditMode (cell) {
+if (isEditModeEnabled(cell)) return;
+const code = getCodeContainer(cell);
+code.setAttribute("contenteditable", true);
+code.focus();
+	} // enableEditMode
+
+
+function disableEditMode (cell) {
+if (not(isEditModeEnabled(cell))) return;
+const code = getCodeContainer(cell);
+code.removeAttribute("contenteditable");
+getOutputContainer(cell).focus();
+	} // disableEditMode
+
+
+function toggleCellType (cell) {
+getCellType(cell) === "code"? setCellType(cell, "markdown") : setCellType(cell, "code");
+}
+
+	// event handlers
 
 /*
 each action associates a label with a function.
@@ -139,34 +177,21 @@ performShortcut(keyToText(e), findCell(e.target));
 } // handleKey
 
 function performShortcut (keyText, cell) {
-if (not(keymap.has(key))) return;
-for (test of keymap[key]) {
-if (test[0](cell)) test[1](cell);
-} // for
-
+if (keymap.has(keyText)) keymap.get(keyText)(cell);
 } // performShortcut
 
 
 
-const cellActions = {
-execute: executeCell,
-enableEditMode: enableEditMode,
-setMarkdownMode: setMarkdownMode,
-setCodeMode: setCodeMode,
-}; // cellActions
+const cellActions = new Map([
+["executeCell", executeCell],
+["enableEditMode", enableEditMode],
+["toggleCellType", toggleCellType]
+]); // cellActions
 
 const keymap = new Map([
     ["control enter", executeCell]
-
-["enter", [
-    [isEditModeDisabled, enableEditMode]
-]],
-
-["control space", [
-[isMarkdownModeEnabled, enableCodeMode],
-[isCodeModeEnabled, enableMarkdowMode]
-]]
-
+["enter", enableEditMode],
+["control space", toggleCellType],
 ]);
 
 
