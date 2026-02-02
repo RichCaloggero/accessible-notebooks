@@ -3,18 +3,133 @@
 
 const API_BASE = 'http://localhost:5000/api';
 
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function not(x) { return !x; } // not
+
+// Keyboard handling utilities
+
+function textToKey(text) {
+    const t = text.split(" ").map(x => x.trim()).filter(x => x);
+    const key = {};
+    key.ctrlKey = t.includes("control") || t.includes("ctrl");
+    key.altKey = t.includes("alt");
+    key.shiftKey = t.includes("shift");
+    key.key = t[t.length - 1]; // last component of array
+
+    if (not(key.key)) {
+        throw new Error(`textToKey: ${text} is an invalid key descriptor; character must be last component as in "control shift x"`);
+    } else if (key.key.toLowerCase() === "space") {
+        key.key = " ";
+    } else if (key.key.toLowerCase() === "enter") {
+        key.key = "Enter";
+    } else {
+        key.key = key.key.charAt(0).toLowerCase();
+    } // if key type
+
+    return key;
+} // textToKey
+
+function keyToText(key) {
+    let text = "";
+    if (key.ctrlKey) text += "control ";
+    if (key.altKey) text += "alt ";
+    if (key.shiftKey) text += "shift ";
+    if (key.key) {
+        // Convert space character back to "space" word
+        if (key.key === " ") {
+            text += "space";
+        } else {
+            text += key.key.toLowerCase();
+        }
+    } // if key.key
+    return text.trim();
+} // keyToText
+
+function eventToKey(e) {
+    // Filter out modifier keys (keydown just returns "control" when control key is pressed)
+    return e.type === "keydown" && not(isModifierKey(e.key))
+        ? { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, key: e.key }
+        : null;
+} // eventToKey
+
+function isModifierKey(key) {
+    return key === "Control" || key === "Alt" || key === "Shift";
+} // isModifierKey
+
+function hasModifierKeys(e) {
+    return e.ctrlKey || e.altKey || e.shiftKey;
+} // hasModifierKeys
+
+// ============================================================================
+// Cell Navigation & Accessors
+// ============================================================================
+
+function getCellByIndex(n) {
+    return document.querySelectorAll(".cell")[n];
+} // getCellByIndex
+
+function findCell(element) {
+    //console.log("findCell: ", element);
+    return element.closest(".cell");
+} // findCell
+
+function getCodeContainer(cell) {
+    return cell.querySelector(".code");
+} // getCodeContainer
+
+function getOutputContainer(cell) {
+    return cell.querySelector(".output");
+} // getOutputContainer
+
+function getCellToolbar(cell) {
+    return cell.querySelector(".toolbar");
+} // getCellToolbar
+
+// ============================================================================
+// Predicates
+// ============================================================================
+
+function isCell(x) {
+    return x && x.matches && x.matches(".cell");
+} // isCell
+
+function isCodeContainer(x) {
+    return x && x.matches && x.matches(".code");
+} // isCodeContainer
+
+function isToolbarContainer(x) {
+    return x && x.matches && x.matches(".toolbar");
+} // isToolbarContainer
+
+function isEditModeEnabled(cell) {
+    const code = getCodeContainer(cell);
+    return code && code.getAttribute("contenteditable") === "true";
+} // isEditModeEnabled
+
+// ============================================================================
 // Elements
+// ============================================================================
+
 const startKernelBtn = document.getElementById('start-kernel-btn');
 const restartKernelBtn = document.getElementById('restart-kernel-btn');
 const shutdownKernelBtn = document.getElementById('shutdown-kernel-btn');
 const kernelStatus = document.getElementById('kernel-status');
 const notebookTable = document.querySelector('.notebook tbody');
 
+// ============================================================================
 // State
+// ============================================================================
+
 let kernelAlive = false;
 let activeCell = null;
 
-// Update kernel status display
+// ============================================================================
+// Kernel Management
+// ============================================================================
+
 function updateKernelStatus(alive) {
     kernelAlive = alive;
 
@@ -26,15 +141,14 @@ function updateKernelStatus(alive) {
         kernelStatus.textContent = 'Kernel: Not Running';
         kernelStatus.classList.remove('active');
         kernelStatus.classList.remove('error');
-    }
+    } // if alive
 
     // Enable/disable buttons
     startKernelBtn.disabled = alive;
-    restartKernelBtn.disabled = !alive;
-    shutdownKernelBtn.disabled = !alive;
-}
+    restartKernelBtn.disabled = not(alive);
+    shutdownKernelBtn.disabled = not(alive);
+} // updateKernelStatus
 
-// Start kernel
 async function startKernel() {
     try {
         startKernelBtn.disabled = true;
@@ -49,15 +163,14 @@ async function startKernel() {
             updateKernelStatus(true);
         } else {
             kernelStatus.classList.add('error');
-        }
+        } // if status
     } catch (error) {
         console.error('Error starting kernel:', error);
     } finally {
         startKernelBtn.disabled = false;
-    }
-}
+    } // try
+} // startKernel
 
-// Restart kernel
 async function restartKernel() {
     try {
         restartKernelBtn.disabled = true;
@@ -72,19 +185,18 @@ async function restartKernel() {
             updateKernelStatus(true);
 
             // Clear all outputs
-            document.querySelectorAll('output').forEach(output => {
+            document.querySelectorAll('.output').forEach(output => {
                 output.textContent = '';
                 output.classList.remove('has-output', 'has-error');
             });
-        }
+        } // if status
     } catch (error) {
         console.error('Error restarting kernel:', error);
     } finally {
         restartKernelBtn.disabled = false;
-    }
-}
+    } // try
+} // restartKernel
 
-// Shutdown kernel
 async function shutdownKernel() {
     try {
         shutdownKernelBtn.disabled = true;
@@ -97,86 +209,117 @@ async function shutdownKernel() {
 
         if (result.status === 'ok') {
             updateKernelStatus(false);
-        }
+        } // if status
     } catch (error) {
         console.error('Error shutting down kernel:', error);
     } finally {
         shutdownKernelBtn.disabled = false;
-    }
-}
+    } // try
+} // shutdownKernel
 
-// Get cell type
-function getCellType(cellNumber) {
-    const row = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`).closest('tr');
-    return row.dataset.cellType || 'code';
-}
+async function checkStatus() {
+    try {
+        const response = await fetch(`${API_BASE}/status`);
+        const result = await response.json();
 
-// Set cell type
-function setCellType(cellNumber, type) {
-    const row = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`).closest('tr');
-    row.dataset.cellType = type;
+        if (result.status === 'ok') {
+            updateKernelStatus(result.kernel_alive);
+        } // if status
+    } catch (error) {
+        console.error('Error checking status:', error);
+        console.error('Backend server not responding. Please start the backend server.');
+    } // try
+} // checkStatus
+
+// ============================================================================
+// Cell Type Functions
+// ============================================================================
+
+function getCellType(cell) {
+    return cell.dataset.type || 'code';
+} // getCellType
+
+function setCellType(cell, type) {
+    cell.dataset.type = type;
 
     // Update type indicator
-    const typeLabel = row.querySelector('.type-label');
-    typeLabel.textContent = type === 'markdown' ? 'Markdown' : 'Code';
-}
+    const typeLabel = cell.querySelector('.type-label');
+    if (typeLabel) {
+        typeLabel.textContent = type === 'markdown' ? 'Markdown' : 'Code';
+    } // if typeLabel
+} // setCellType
 
-// Toggle cell type
-function toggleCellType(cellNumber) {
-    const currentType = getCellType(cellNumber);
+function toggleCellType(cell) {
+    const currentType = getCellType(cell);
     const newType = currentType === 'code' ? 'markdown' : 'code';
-    console.log(`Toggling cell ${cellNumber} from ${currentType} to ${newType}`);
-    setCellType(cellNumber, newType);
-}
+    console.log(`Toggling cell from ${currentType} to ${newType}`);
+    setCellType(cell, newType);
+} // toggleCellType
 
-// Enter edit mode for any cell
-function enterEditMode(cellNumber) {
-    const row = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`).closest('tr');
-    const codeInput = document.getElementById(`code-${cellNumber}`);
-    const outputElement = document.getElementById(`output-${cellNumber}`);
-    const editBtn = row.querySelector('.edit-btn');
-    const cellType = getCellType(cellNumber);
+// ============================================================================
+// Cell Mode Functions
+// ============================================================================
 
-    if (cellType === 'markdown' && row.dataset.mode === 'rendered') {
-        // Markdown cell in rendered mode: clear output, show and focus input
-        outputElement.textContent = '';
-        outputElement.classList.remove('has-output', 'markdown-rendered');
-        outputElement.removeAttribute('aria-live');
-        editBtn.style.display = 'none';
-        row.dataset.mode = 'edit';
-    }
+function enableEditMode(cell) {
+    if (isEditModeEnabled(cell)) return;
 
-    // Always show, make editable, and focus the pre element
-    // Keep tabindex="-1" - programmatic focus still works
-    codeInput.hidden = false;
-    codeInput.setAttribute("contentEditable", 'true');
-    codeInput.setAttribute('tabindex', '-1');
-    codeInput.focus();
-}
+    const codeContainer = getCodeContainer(cell);
+    const outputContainer = getOutputContainer(cell);
+    const editBtn = cell.querySelector('.edit-btn');
+    const cellType = getCellType(cell);
 
-// Execute code in a cell
-async function executeCell(cellNumber) {
-    const codeInput = document.getElementById(`code-${cellNumber}`);
-    const outputElement = document.getElementById(`output-${cellNumber}`);
-    const runBtn = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`);
-    const row = runBtn.closest('tr');
-    const cellType = getCellType(cellNumber);
+/*    // For markdown cells with rendered output, clear it
+    if (cellType === 'markdown' && outputContainer.classList.contains('markdown-rendered')) {
+        outputContainer.textContent = '';
+         outputContainer.classList.remove('has-output', 'markdown-rendered');
+        outputContainer.removeAttribute('aria-live');
+        if (editBtn) editBtn.style.display = 'none';
+    } // if markdown rendered
+*/
 
-    const code = codeInput.textContent.trim();
+    // Show and enable the code container
+    codeContainer.hidden = false;
+    codeContainer.setAttribute('contenteditable', 'true');
+    codeContainer.setAttribute('tabindex', '-1');
+    codeContainer.focus();
+} // enableEditMode
 
-    console.log(`Executing cell ${cellNumber}, type: ${cellType}, code: ${code.substring(0, 50)}...`);
+function disableEditMode(cell) {
+    if (not(isEditModeEnabled(cell))) return;
 
-    if (!code) {
+    const codeContainer = getCodeContainer(cell);
+    const outputContainer = getOutputContainer(cell);
+
+    codeContainer.removeAttribute('contenteditable');
+    codeContainer.hidden = true;
+    outputContainer.focus();
+} // disableEditMode
+
+// ============================================================================
+// Cell Execution
+// ============================================================================
+
+async function executeCell(cell) {
+    const codeContainer = getCodeContainer(cell);
+    const outputContainer = getOutputContainer(cell);
+    const runBtn = cell.querySelector('.run-btn');
+    const cellType = getCellType(cell);
+
+    const code = codeContainer.textContent.trim();
+
+    console.log(`Executing cell, type: ${cellType}, code: ${code.substring(0, 50)}...`);
+
+    if (not(code)) {
         return;
-    }
+    } // if no code
 
     try {
         // Update UI
         runBtn.disabled = true;
         runBtn.classList.add('executing');
         runBtn.textContent = 'Executing...';
-        outputElement.textContent = '';
-        outputElement.classList.remove('has-output', 'has-error', 'markdown-rendered');
+        outputContainer.textContent = '';
+        outputContainer.classList.remove('has-output', 'has-error', 'markdown-rendered');
 
         // Handle markdown cells
         if (cellType === 'markdown') {
@@ -195,11 +338,11 @@ async function executeCell(cellNumber) {
                 let prevBlank = false;
                 for (let line of lines) {
                     let isBlank = line.length === 0;
-                    if (!(isBlank && prevBlank)) {
+                    if (not(isBlank && prevBlank)) {
                         resultLines.push(line);
-                    }
+                    } // if not consecutive blank
                     prevBlank = isBlank;
-                }
+                } // for line
                 cleanedMarkdown = resultLines.join('\n');
 
                 console.log('Cleaned markdown:', cleanedMarkdown);
@@ -213,34 +356,31 @@ async function executeCell(cellNumber) {
                 console.log('Rendered HTML:', html);
 
                 // Display the rendered HTML
-                outputElement.innerHTML = html;
-                outputElement.classList.add('markdown-rendered');
+                outputContainer.innerHTML = html;
+                outputContainer.classList.add('markdown-rendered');
 
                 // Set aria-live="off" to prevent double speaking
-                outputElement.setAttribute('aria-live', 'off');
+                outputContainer.setAttribute('aria-live', 'off');
 
-                // Keep pre visible and editable - output focus will hide it
                 // Show edit button
-                row.querySelector('.edit-btn').style.display = 'block';
+                const editBtn = cell.querySelector('.edit-btn');
+                if (editBtn) editBtn.style.display = 'block';
 
-                // Update mode
-                row.dataset.mode = 'rendered';
-
-                // Focus the output (focus listener will hide the pre)
-                outputElement.focus();
+                // Focus the output (focus listener will hide the code container)
+                outputContainer.focus();
             } catch (error) {
                 console.error('Markdown render error:', error);
-                outputElement.textContent = `Error: ${error.message}`;
-                outputElement.classList.add('has-error');
-            }
+                outputContainer.textContent = `Error: ${error.message}`;
+                outputContainer.classList.add('has-error');
+            } // try markdown
 
             runBtn.disabled = false;
             runBtn.classList.remove('executing');
             runBtn.innerHTML = 'Run<br><small>(Ctrl+Enter)</small>';
             return;
-        }
+        } // if markdown
 
-        // Execute code
+        // Execute code via API
         const response = await fetch(`${API_BASE}/execute`, {
             method: 'POST',
             headers: {
@@ -252,7 +392,7 @@ async function executeCell(cellNumber) {
         const result = await response.json();
 
         // Remove aria-live for code cells to prevent double speaking
-        outputElement.removeAttribute('aria-live');
+        outputContainer.removeAttribute('aria-live');
 
         // Display output
         if (result.status === 'ok') {
@@ -262,15 +402,15 @@ async function executeCell(cellNumber) {
                         return item.text;
                     } else if (item.type === 'execute_result') {
                         return item.text;
-                    }
+                    } // if type
                     return '';
                 }).join('');
 
-                outputElement.textContent = outputText;
-                outputElement.classList.add('has-output');
+                outputContainer.textContent = outputText;
+                outputContainer.classList.add('has-output');
             } else {
-                outputElement.textContent = '(No output)';
-            }
+                outputContainer.textContent = '(No output)';
+            } // if output
         } else if (result.status === 'error') {
             // Display error
             const error = result.error;
@@ -278,125 +418,138 @@ async function executeCell(cellNumber) {
 
             if (error.traceback && error.traceback.length > 0) {
                 errorText = error.traceback.join('\n');
-            }
+            } // if traceback
 
-            outputElement.textContent = errorText;
-            outputElement.classList.add('has-error');
-        }
+            outputContainer.textContent = errorText;
+            outputContainer.classList.add('has-error');
+        } // if status
 
     } catch (error) {
         console.error('Error executing cell:', error);
-        outputElement.textContent = `Error: ${error.message}`;
-        outputElement.classList.add('has-error');
+        outputContainer.textContent = `Error: ${error.message}`;
+        outputContainer.classList.add('has-error');
     } finally {
         // Reset button
         runBtn.disabled = false;
         runBtn.classList.remove('executing');
         runBtn.innerHTML = 'Run<br><small>(Ctrl+Enter)</small>';
-    }
-}
+    } // try
+} // executeCell
 
-// Check kernel status on load
-async function checkStatus() {
-    try {
-        const response = await fetch(`${API_BASE}/status`);
-        const result = await response.json();
+// ============================================================================
+// Action & Keymap System
+// ============================================================================
 
-        if (result.status === 'ok') {
-            updateKernelStatus(result.kernel_alive);
-        }
-    } catch (error) {
-        console.error('Error checking status:', error);
-        console.error('Backend server not responding. Please start the backend server.');
-    }
-}
+const cellActions = new Map([
+    ["executeCell", executeCell],
+    ["enableEditMode", enableEditMode],
+    ["toggleCellType", toggleCellType],
+    ["disableEditMode", disableEditMode]
+]); // cellActions
 
-// Event listeners for kernel controls
+const keymap = new Map([
+    ["control enter", executeCell],
+    ["enter", enableEditMode],
+    ["control space", toggleCellType]
+]); // keymap
+
+function performAction(action, cell) {
+    if (not(action) || not(cell)) return;
+
+    if (cellActions.has(action)) {
+        cellActions.get(action)(cell);
+    } else {
+        console.error(`${action} is an invalid cell action`);
+    } // if has action
+} // performAction
+
+function performShortcut(keyText, cell) {
+    if (not(cell)) return;
+    if (keymap.has(keyText)) {
+        keymap.get(keyText)(cell);
+    } // if has key
+} // performShortcut
+
+// ============================================================================
+// Event Handlers
+// ============================================================================
+
+function handleCellClick(e) {
+    const cell = findCell(e.target);
+    if (not(cell)) return;
+
+    // Find action from clicked element or its parent
+    const actionElement = e.target.dataset.action ? e.target : e.target.closest('[data-action]');
+    const action = actionElement ? actionElement.dataset.action : null;
+
+    if (action) {
+        e.preventDefault();
+        performAction(action, cell);
+        return;
+    } // if action
+
+    // Screen readers convert Enter/Space on focused elements to click events
+    // So clicking on output (or its children, e.g. rendered markdown) should enter edit mode
+    if (e.target.closest('.output')) {
+        enableEditMode(cell);
+    } // if output
+} // handleCellClick
+
+function handleCellKeydown(e) {
+    const cell = findCell(e.target);
+    if (not(cell)) return;
+
+    const key = eventToKey(e);
+    if (not(key)) return;
+
+    const keyText = keyToText(key);
+
+    // Allow Enter in code container for newlines
+    if (keyText === "enter" && isCodeContainer(e.target)) {
+        return; // Allow default behavior
+    } // if enter in code
+
+    if (keymap.has(keyText)) {
+        e.preventDefault();
+        performShortcut(keyText, cell);
+    } // if has key
+} // handleCellKeydown
+
+function handleFocusIn(e) {
+    const cell = findCell(e.target);
+    if (not(cell)) return;
+
+    if (isCodeContainer(e.target)) {
+        activeCell = cell;
+    } // if code container
+
+    // When output gains focus, hide code container
+    if (e.target.matches('.output')) {
+        const codeContainer = getCodeContainer(cell);
+        codeContainer.hidden = true;
+        codeContainer.contentEditable = 'false';
+        codeContainer.setAttribute('tabindex', '-1');
+    } // if output
+} // handleFocusIn
+
+// ============================================================================
+// Event Listeners
+// ============================================================================
+
+// Kernel controls
 startKernelBtn.addEventListener('click', startKernel);
 restartKernelBtn.addEventListener('click', restartKernel);
 shutdownKernelBtn.addEventListener('click', shutdownKernel);
 
-// Event delegation for notebook table
+// Notebook table event delegation (all events bubble)
 if (notebookTable) {
-    // Handle button clicks
-    notebookTable.addEventListener('click', (e) => {
-        // Run button
-        if (e.target.classList.contains('run-btn') || e.target.closest('.run-btn')) {
-            const btn = e.target.classList.contains('run-btn') ? e.target : e.target.closest('.run-btn');
-            const cellNumber = btn.dataset.cell;
-            executeCell(cellNumber);
-        }
+    notebookTable.addEventListener('click', handleCellClick);
+    notebookTable.addEventListener('keydown', handleCellKeydown);
+    notebookTable.addEventListener('focusin', handleFocusIn);
+} // if notebookTable
 
-        // Toggle type button
-        if (e.target.classList.contains('toggle-type-btn') || e.target.closest('.toggle-type-btn')) {
-            const btn = e.target.classList.contains('toggle-type-btn') ? e.target : e.target.closest('.toggle-type-btn');
-            const cellNumber = btn.dataset.cell;
-            toggleCellType(cellNumber);
-        }
-
-        // Edit button
-        if (e.target.classList.contains('edit-btn') || e.target.closest('.edit-btn')) {
-            const btn = e.target.classList.contains('edit-btn') ? e.target : e.target.closest('.edit-btn');
-            const cellNumber = btn.dataset.cell;
-            enterEditMode(cellNumber);
-        }
-    });
-
-    // Handle keyboard shortcuts
-    notebookTable.addEventListener('keydown', (e) => {
-        const row = e.target.closest('tr');
-        if (!row) return;
-
-        const runBtn = row.querySelector('.run-btn');
-        if (!runBtn) return;
-
-        const cellNumber = runBtn.dataset.cell;
-
-        // Ctrl+Enter: Run cell
-        if (e.ctrlKey && e.key === 'Enter') {
-            e.preventDefault();
-            executeCell(cellNumber);
-        }
-
-        // Ctrl+Space: Toggle cell type
-        if (e.ctrlKey && e.key === ' ') {
-            e.preventDefault();
-            toggleCellType(cellNumber);
-        }
-
-        // Enter: Enter edit mode (only if not already in the code input)
-        if (e.key === 'Enter' && !e.ctrlKey) {
-            const codeInput = document.getElementById(`code-${cellNumber}`);
-            // If we're in the code input, let Enter insert a newline (default behavior)
-            if (e.target === codeInput) {
-                return; // Don't prevent default, allow newline insertion
-            }
-            // Otherwise, enter edit mode
-            e.preventDefault();
-            enterEditMode(cellNumber);
-        }
-    });
-}
-
-// Removed setActiveCell function - tabindex management now handled by focus listener
-
-// Listen for focus events
-document.addEventListener('focus', (e) => {
-    if (e.target.classList.contains('code-input')) {
-        const cellNumber = e.target.id.replace('code-', '');
-        activeCell = cellNumber;
-    }
-
-    // When output gains focus, hide and disable pre for ALL cell types
-    if (e.target.tagName === 'OUTPUT') {
-        const cellNumber = e.target.id.replace('output-', '');
-        const codeInput = document.getElementById(`code-${cellNumber}`);
-
-        codeInput.hidden = true;
-        codeInput.contentEditable = 'false';
-        codeInput.setAttribute('tabindex', '-1');
-    }
-}, true);
-
+// ============================================================================
 // Initialize
+// ============================================================================
+
 checkStatus();

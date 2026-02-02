@@ -42,117 +42,113 @@
                 </thead>
                 <tbody>
                     <!-- Cell 1 -->
-                    <tr data-cell-type="code" data-mode="edit">
+                    <tr class="cell" data-type="code">
                         <td class="toolbar">
                             <div class="cell-type-indicator" aria-live="polite">
                                 <strong>Type:</strong> <span class="type-label">Code</span>
                             </div>
-                            <button class="run-btn" data-cell="1" aria-label="Run cell 1">
+                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 1">
                                 Run<br><small>(Ctrl+Enter)</small>
                             </button>
-                            <button class="toggle-type-btn" data-cell="1" aria-label="Toggle cell type (Ctrl+Space)">
+                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
                                 Code/Markdown<br><small>(Ctrl+Space)</small>
                             </button>
-                            <button class="edit-btn" data-cell="1" aria-label="Edit cell" style="display: none;">
+                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
                                 Edit<br><small>(Enter)</small>
                             </button>
                         </td>
                         <td class="cell-content">
                             <pre
-                                id="code-1"
-                                class="code-input"
+                                class="code"
                                 contenteditable="true"
                                 spellcheck="false"
                                 tabindex="-1">2 + 2</pre>
                             <hr>
-                            <output id="output-1" tabindex="0"></output>
+                            <output class="output" tabindex="0"></output>
                         </td>
                     </tr>
 
                     <!-- Cell 2 -->
-                    <tr data-cell-type="code" data-mode="edit">
+                    <tr class="cell" data-type="code">
                         <td class="toolbar">
                             <div class="cell-type-indicator" aria-live="polite">
                                 <strong>Type:</strong> <span class="type-label">Code</span>
                             </div>
-                            <button class="run-btn" data-cell="2" aria-label="Run cell 2">
+                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 2">
                                 Run<br><small>(Ctrl+Enter)</small>
                             </button>
-                            <button class="toggle-type-btn" data-cell="2" aria-label="Toggle cell type (Ctrl+Space)">
+                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
                                 Code/Markdown<br><small>(Ctrl+Space)</small>
                             </button>
-                            <button class="edit-btn" data-cell="2" aria-label="Edit cell" style="display: none;">
+                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
                                 Edit<br><small>(Enter)</small>
                             </button>
                         </td>
                         <td class="cell-content">
                             <pre
-                                id="code-2"
-                                class="code-input"
+                                class="code"
                                 contenteditable="true"
                                 spellcheck="false"
                                 tabindex="-1">print("Hello, world!")</pre>
                             <hr>
-                            <output id="output-2" tabindex="-1"></output>
+                            <output class="output" tabindex="-1"></output>
                         </td>
                     </tr>
 
                     <!-- Cell 3 -->
-                    <tr data-cell-type="code" data-mode="edit">
+                    <tr class="cell" data-type="code">
                         <td class="toolbar">
                             <div class="cell-type-indicator" aria-live="polite">
                                 <strong>Type:</strong> <span class="type-label">Code</span>
                             </div>
-                            <button class="run-btn" data-cell="3" aria-label="Run cell 3">
+                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 3">
                                 Run<br><small>(Ctrl+Enter)</small>
                             </button>
-                            <button class="toggle-type-btn" data-cell="3" aria-label="Toggle cell type (Ctrl+Space)">
+                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
                                 Code/Markdown<br><small>(Ctrl+Space)</small>
                             </button>
-                            <button class="edit-btn" data-cell="3" aria-label="Edit cell" style="display: none;">
+                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
                                 Edit<br><small>(Enter)</small>
                             </button>
                         </td>
                         <td class="cell-content">
                             <pre
-                                id="code-3"
-                                class="code-input"
+                                class="code"
                                 contenteditable="true"
                                 spellcheck="false"
                                 tabindex="-1">x = 42
 print(f"x = {x}")
 x * 2</pre>
                             <hr>
-                            <output id="output-3" tabindex="-1"></output>
+                            <output class="output" tabindex="-1"></output>
                         </td>
                     </tr>
 
                     <!-- Cell 4 -->
-                    <tr data-cell-type="code" data-mode="edit">
+                    <tr class="cell" data-type="code">
                         <td class="toolbar">
                             <div class="cell-type-indicator" aria-live="polite">
                                 <strong>Type:</strong> <span class="type-label">Code</span>
                             </div>
-                            <button class="run-btn" data-cell="4" aria-label="Run cell 4">
+                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 4">
                                 Run<br><small>(Ctrl+Enter)</small>
                             </button>
-                            <button class="toggle-type-btn" data-cell="4" aria-label="Toggle cell type (Ctrl+Space)">
+                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
                                 Code/Markdown<br><small>(Ctrl+Space)</small>
                             </button>
-                            <button class="edit-btn" data-cell="4" aria-label="Edit cell" style="display: none;">
+                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
                                 Edit<br><small>(Enter)</small>
                             </button>
                         </td>
                         <td class="cell-content">
                             <pre
-                                id="code-4"
-                                class="code-input"
+                                class="code"
                                 contenteditable="true"
                                 spellcheck="false"
                                 tabindex="-1">import math
 math.pi</pre>
                             <hr>
-                            <output id="output-4" tabindex="-1"></output>
+                            <output class="output" tabindex="-1"></output>
                         </td>
                     </tr>
                 </tbody>
