@@ -147,9 +147,10 @@ function enterEditMode(cellNumber) {
     }
 
     // Always show, make editable, and focus the pre element
+    // Keep tabindex="-1" - programmatic focus still works
     codeInput.hidden = false;
     codeInput.contentEditable = 'true';
-    codeInput.setAttribute('tabindex', '0');
+    codeInput.setAttribute('tabindex', '-1');
     codeInput.focus();
 }
 
@@ -218,18 +219,14 @@ async function executeCell(cellNumber) {
                 // Set aria-live="off" to prevent double speaking
                 outputElement.setAttribute('aria-live', 'off');
 
-                // Hide input and make it non-editable
-                codeInput.hidden = true;
-                codeInput.contentEditable = 'false';
-                codeInput.setAttribute('tabindex', '-1');
-
+                // Keep pre visible and editable - output focus will hide it
                 // Show edit button
                 row.querySelector('.edit-btn').style.display = 'block';
 
                 // Update mode
                 row.dataset.mode = 'rendered';
 
-                // Focus the output for markdown cells
+                // Focus the output (focus listener will hide the pre)
                 outputElement.focus();
             } catch (error) {
                 console.error('Markdown render error:', error);
@@ -381,51 +378,25 @@ if (notebookTable) {
     });
 }
 
-// Set active cell and update tabindex for focus management
-function setActiveCell(cellNumber) {
-    if (activeCell === cellNumber) return;
+// Removed setActiveCell function - tabindex management now handled by focus listener
 
-    // Get all code inputs and outputs
-    const allCodeInputs = document.querySelectorAll('.code-input');
-    const allOutputs = document.querySelectorAll('output');
-
-    // Set all to tabindex="-1"
-    allCodeInputs.forEach(input => input.setAttribute('tabindex', '-1'));
-    allOutputs.forEach(output => output.setAttribute('tabindex', '-1'));
-
-    // Set active cell to tabindex="0"
-    const codeInput = document.getElementById(`code-${cellNumber}`);
-    const outputElement = document.getElementById(`output-${cellNumber}`);
-
-    if (codeInput) codeInput.setAttribute('tabindex', '0');
-    if (outputElement) outputElement.setAttribute('tabindex', '0');
-
-    activeCell = cellNumber;
-}
-
-// Listen for focus events on code inputs to set active cell
+// Listen for focus events
 document.addEventListener('focus', (e) => {
     if (e.target.classList.contains('code-input')) {
         const cellNumber = e.target.id.replace('code-', '');
-        setActiveCell(cellNumber);
+        activeCell = cellNumber;
     }
 
-    // When output gains focus, ensure pre is hidden/uneditable for markdown cells
+    // When output gains focus, hide and disable pre for ALL cell types
     if (e.target.tagName === 'OUTPUT') {
         const cellNumber = e.target.id.replace('output-', '');
-        const row = document.querySelector(`.run-btn[data-cell="${cellNumber}"]`).closest('tr');
         const codeInput = document.getElementById(`code-${cellNumber}`);
-        const cellType = getCellType(cellNumber);
 
-        // For markdown cells in rendered mode, ensure pre is hidden/uneditable
-        if (cellType === 'markdown' && row.dataset.mode === 'rendered') {
-            codeInput.hidden = true;
-            codeInput.contentEditable = 'false';
-            codeInput.setAttribute('tabindex', '-1');
-        }
+        codeInput.hidden = true;
+        codeInput.contentEditable = 'false';
+        codeInput.setAttribute('tabindex', '-1');
     }
 }, true);
 
 // Initialize
 checkStatus();
-setActiveCell('1');  // Set first cell as active on load
