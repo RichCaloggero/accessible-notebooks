@@ -105,6 +105,22 @@ h4 {
     cursor: not-allowed;
 }
 
+/* File input styled as button */
+.file-label {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.file-label:hover {
+    background-color: #0052a3;
+    border-color: #0052a3;
+}
+
+.file-label:focus-within {
+    outline: 4px solid #ffcc00;
+    outline-offset: 2px;
+}
+
 .status-indicator {
     font-weight: bold;
     padding: 12px 20px;
@@ -332,7 +348,7 @@ output {
 }
 
 output:empty::before {
-    content: "(No output yet)";
+/*    content: "(No output yet)";*/
     color: #999;
     font-style: italic;
 }

@@ -1,0 +1,26 @@
+cd /home/accessible-notebooks
+nohup python3 backend/server_integrated.py > server.log 2>&1 &
+To check if it's running:
+Copy code to clipboard
+ps aux | grep server_integrated
+# or
+curl http://127.0.0.1:5000/api/status
+To stop it:
+Copy code to clipboard
+pkill -f server_integrated.py
+To view logs:
+Copy code to clipboard
+tail -f server.log
+Shutting down when not in use is smart. You could also consider adding rate limiting to nginx if you want to leave it running but protect against abuse:
+Copy code to clipboard
+limit_req_zone $binary_remote_addr zone=demo:10m rate=10r/s;
+
+server {
+    ...
+    location / {
+        limit_req zone=demo burst=20;
+        ...
+    }
+}
+Good luck with the demo!
+

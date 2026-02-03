@@ -15,7 +15,25 @@
     </header>
 
     <main>
-        <!-- Status and controls -->
+        <!-- File controls -->
+        <section aria-labelledby="file-controls-heading">
+            <h2 id="file-controls-heading">Notebook File</h2>
+
+            <div class="controls">
+                <label for="notebook-file-input" class="control-btn file-label">
+                    Load Notebook
+                    <input type="file" id="notebook-file-input" accept=".ipynb" class="sr-only">
+                </label>
+                <button id="save-notebook-btn" class="control-btn">Save Notebook</button>
+                <button id="new-notebook-btn" class="control-btn">New Notebook</button>
+                <button id="add-cell-btn" class="control-btn">Add Cell</button>
+                <span id="notebook-name" class="status-indicator" role="status">
+                    Untitled.ipynb
+                </span>
+            </div>
+        </section>
+
+        <!-- Kernel controls -->
         <section aria-labelledby="controls-heading">
             <h2 id="controls-heading">Kernel Controls</h2>
 
@@ -160,6 +178,6 @@ math.pi</pre>
         <p>Accessible Notebooks - Built for screen reader users</p>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="app_integrated.js"></script>
 </body>
 </html>

@@ -268,14 +268,6 @@ function enableEditMode(cell) {
     const editBtn = cell.querySelector('.edit-btn');
     const cellType = getCellType(cell);
 
-/*    // For markdown cells with rendered output, clear it
-    if (cellType === 'markdown' && outputContainer.classList.contains('markdown-rendered')) {
-        outputContainer.textContent = '';
-         outputContainer.classList.remove('has-output', 'markdown-rendered');
-        outputContainer.removeAttribute('aria-live');
-        if (editBtn) editBtn.style.display = 'none';
-    } // if markdown rendered
-*/
 
     // Show and enable the code container
     codeContainer.hidden = false;
