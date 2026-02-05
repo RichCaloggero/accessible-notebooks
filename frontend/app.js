@@ -1,7 +1,7 @@
-// Accessible Notebooks Frontend
-// Handles communication with backend and UI updates
+// Accessible Notebooks Frontend (Integrated Server Version)
+// For use with server_integrated.py - uses relative URLs
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = '/api';  // Relative URL - no CORS needed!
 
 // ============================================================================
 // Utility Functions
@@ -72,7 +72,6 @@ function getCellByIndex(n) {
 } // getCellByIndex
 
 function findCell(element) {
-    //console.log("findCell: ", element);
     return element.closest(".cell");
 } // findCell
 
@@ -119,12 +118,20 @@ const shutdownKernelBtn = document.getElementById('shutdown-kernel-btn');
 const kernelStatus = document.getElementById('kernel-status');
 const notebookTable = document.querySelector('.notebook tbody');
 
+// File controls
+const notebookFileInput = document.getElementById('notebook-file-input');
+const saveNotebookBtn = document.getElementById('save-notebook-btn');
+const newNotebookBtn = document.getElementById('new-notebook-btn');
+const addCellBtn = document.getElementById('add-cell-btn');
+const notebookNameDisplay = document.getElementById('notebook-name');
+
 // ============================================================================
 // State
 // ============================================================================
 
 let kernelAlive = false;
 let activeCell = null;
+let currentNotebookName = 'Untitled.ipynb';
 
 // ============================================================================
 // Kernel Management
@@ -252,7 +259,7 @@ function setCellType(cell, type) {
 function toggleCellType(cell) {
     const currentType = getCellType(cell);
     const newType = currentType === 'code' ? 'markdown' : 'code';
-    console.log(`Toggling cell from ${currentType} to ${newType}`);
+    //console.log(`Toggling cell from ${currentType} to ${newType}`);
     setCellType(cell, newType);
 } // toggleCellType
 
@@ -268,6 +275,12 @@ function enableEditMode(cell) {
     const editBtn = cell.querySelector('.edit-btn');
     const cellType = getCellType(cell);
 
+    if (cellType === 'markdown' && outputContainer.classList.contains('markdown-rendered')) {
+        //outputContainer.textContent = '';
+        outputContainer.classList.remove('has-output', 'markdown-rendered');
+        outputContainer.removeAttribute('aria-live');
+        if (editBtn) editBtn.style.display = 'none';
+    } // if markdown rendered
 
     // Show and enable the code container
     codeContainer.hidden = false;
@@ -296,7 +309,6 @@ async function executeCell(cell) {
     const outputContainer = getOutputContainer(cell);
     const runBtn = cell.querySelector('.run-btn');
     const cellType = getCellType(cell);
-
     const code = codeContainer.textContent.trim();
 
     console.log(`Executing cell, type: ${cellType}, code: ${code.substring(0, 50)}...`);
@@ -429,6 +441,231 @@ async function executeCell(cell) {
 } // executeCell
 
 // ============================================================================
+// Notebook File Functions
+// ============================================================================
+
+function createCellElement(cellData) {
+    const cellType = cellData.cell_type || 'code';
+    const source = Array.isArray(cellData.source) ? cellData.source.join('') : (cellData.source || '');
+    const cellIndex = document.querySelectorAll('.cell').length + 1;
+
+    const row = document.createElement('tr');
+    row.className = 'cell';
+    row.dataset.type = cellType;
+
+    row.innerHTML = `
+        <td class="toolbar">
+            <div class="cell-type-indicator" aria-live="polite">
+                <strong>Type:</strong> <span class="type-label">${cellType === 'markdown' ? 'Markdown' : 'Code'}</span>
+            </div>
+            <button class="run-btn" data-action="executeCell" aria-label="Run cell ${cellIndex}">
+                Run<br><small>(Ctrl+Enter)</small>
+            </button>
+            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
+                Code/Markdown<br><small>(Ctrl+Space)</small>
+            </button>
+            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
+                Edit<br><small>(Enter)</small>
+            </button>
+        </td>
+        <td class="cell-content">
+            <pre class="code" contenteditable="true" spellcheck="false" tabindex="-1"></pre>
+            <hr>
+            <output class="output" tabindex="0"></output>
+        </td>
+    `;
+
+    // Set source text (using textContent to avoid XSS)
+    const codeContainer = row.querySelector('.code');
+    codeContainer.textContent = source;
+
+    return row;
+} // createCellElement
+
+function cellToNotebookData(cellElement) {
+    const cellType = getCellType(cellElement);
+    const codeContainer = getCodeContainer(cellElement);
+    const source = codeContainer.textContent;
+
+    // Split source into lines (ipynb format uses array of lines)
+    const sourceLines = source.split('\n').map((line, i, arr) => {
+        // Add newline to all but last line
+        return i < arr.length - 1 ? line + '\n' : line;
+    });
+
+    const cellData = {
+        cell_type: cellType,
+        source: sourceLines,
+        metadata: {}
+    };
+
+    // Code cells have execution_count and outputs
+    if (cellType === 'code') {
+        cellData.execution_count = null;
+        cellData.outputs = [];
+    } // if code
+
+    return cellData;
+} // cellToNotebookData
+
+function clearNotebook() {
+    notebookTable.innerHTML = '';
+} // clearNotebook
+
+function loadNotebookFromData(notebookData) {
+    clearNotebook();
+
+    if (not(notebookData.cells) || notebookData.cells.length === 0) {
+        // Create one empty cell if notebook is empty
+        //addNewCell();
+        return;
+    } // if no cells
+
+    notebookData.cells.forEach(cellData => {
+        const cellElement = createCellElement(cellData);
+        notebookTable.appendChild(cellElement);
+    });
+
+    console.log(`Loaded ${notebookData.cells.length} cells`);
+
+
+runAllMarkdownCells(getAllCells(notebookTable));
+makeAllToolbarsUnfocusable();
+getOutputContainer(getCellByIndex(0)).focus();
+
+} // loadNotebookFromData
+
+function getAllCells (notebookTable) {
+    return [...notebookTable.querySelectorAll(".cell")];
+} // getAllCells
+
+function runAllMarkdownCells (cells) {
+    cells.filter(cell => getCellType(cell) === "markdown")
+    .forEach(cell => executeCell(cell)); 
+}
+
+function makeAllToolbarsUnfocusable () {
+    getAllCells(notebookTable)
+    .map(cell => getCellToolbar(cell))
+    .map(container => [...container.querySelectorAll("button")]).flat(1)
+    .forEach(button => button.setAttribute("tabindex", "-1"));
+} // makeAllToolbarsUnfocusable
+
+function makeAllToolbarsFocusable () {
+    getAllCells(notebookTable)
+    .map(cell => getCellToolbar(cell))
+    .map(container => [...container.querySelectorAll("button")].flat(1))
+    .forEach(button => button.removeAttribute("tabindex"));
+} // makeAllToolbarsFocusable
+
+
+
+function handleFileLoad(e) {
+    const file = e.target.files[0];
+    if (not(file)) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+        try {
+            const notebookData = JSON.parse(event.target.result);
+            loadNotebookFromData(notebookData);
+
+            // Update notebook name
+            currentNotebookName = file.name;
+            if (notebookNameDisplay) {
+                notebookNameDisplay.textContent = currentNotebookName;
+            } // if display
+
+            console.log(`Loaded notebook: ${file.name}`);
+        } catch (error) {
+            console.error('Error parsing notebook:', error);
+            alert(`Error loading notebook: ${error.message}`);
+        } // try
+    }; // onload
+
+    reader.onerror = function() {
+        console.error('Error reading file');
+        alert('Error reading file');
+    }; // onerror
+
+    reader.readAsText(file);
+
+    // Reset input so same file can be loaded again
+    e.target.value = '';
+} // handleFileLoad
+
+function saveNotebook() {
+    const cells = [...document.querySelectorAll('.cell')].map(cellToNotebookData);
+
+    const notebookData = {
+        cells: cells,
+        metadata: {
+            kernelspec: {
+                display_name: 'Python 3',
+                language: 'python',
+                name: 'python3'
+            },
+            language_info: {
+                name: 'python',
+                version: '3.11.0'
+            }
+        },
+        nbformat: 4,
+        nbformat_minor: 5
+    };
+
+    const json = JSON.stringify(notebookData, null, 1);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentNotebookName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    console.log(`Saved notebook: ${currentNotebookName}`);
+} // saveNotebook
+
+function newNotebook() {
+    if (document.querySelectorAll('.cell').length > 0) {
+        if (not(confirm('Create new notebook? Unsaved changes will be lost.'))) {
+            return;
+        } // if not confirmed
+    } // if has cells
+
+    clearNotebook();
+    addNewCell();
+
+    currentNotebookName = 'Untitled.ipynb';
+    if (notebookNameDisplay) {
+        notebookNameDisplay.textContent = currentNotebookName;
+    } // if display
+
+    console.log('Created new notebook');
+} // newNotebook
+
+function addNewCell() {
+    const cellData = {
+        cell_type: 'code',
+        source: '',
+        metadata: {}
+    };
+
+    const cellElement = createCellElement(cellData);
+    notebookTable.appendChild(cellElement);
+
+    // Focus the new cell's code container
+    const codeContainer = getCodeContainer(cellElement);
+    codeContainer.focus();
+
+    return cellElement;
+} // addNewCell
+
+// ============================================================================
 // Action & Keymap System
 // ============================================================================
 
@@ -533,6 +770,12 @@ startKernelBtn.addEventListener('click', startKernel);
 restartKernelBtn.addEventListener('click', restartKernel);
 shutdownKernelBtn.addEventListener('click', shutdownKernel);
 
+// File controls
+if (notebookFileInput) notebookFileInput.addEventListener('change', handleFileLoad);
+if (saveNotebookBtn) saveNotebookBtn.addEventListener('click', saveNotebook);
+if (newNotebookBtn) newNotebookBtn.addEventListener('click', newNotebook);
+if (addCellBtn) addCellBtn.addEventListener('click', addNewCell);
+
 // Notebook table event delegation (all events bubble)
 if (notebookTable) {
     notebookTable.addEventListener('click', handleCellClick);
@@ -544,4 +787,6 @@ if (notebookTable) {
 // Initialize
 // ============================================================================
 
+clearNotebook();
 checkStatus();
+
