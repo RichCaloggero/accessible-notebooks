@@ -278,7 +278,7 @@ function enableEditMode(cell) {
     if (cellType === 'markdown' && outputContainer.classList.contains('markdown-rendered')) {
         //outputContainer.textContent = '';
         outputContainer.classList.remove('has-output', 'markdown-rendered');
-        outputContainer.removeAttribute('aria-live');
+        //outputContainer.removeAttribute('aria-live');
         if (editBtn) editBtn.style.display = 'none';
     } // if markdown rendered
 
@@ -364,14 +364,14 @@ async function executeCell(cell) {
                 outputContainer.classList.add('markdown-rendered');
 
                 // Set aria-live="off" to prevent double speaking
-                outputContainer.setAttribute('aria-live', 'off');
+                //outputContainer.setAttribute('aria-live', 'off');
 
                 // Show edit button
                 const editBtn = cell.querySelector('.edit-btn');
                 if (editBtn) editBtn.style.display = 'block';
 
                 // Focus the output (focus listener will hide the code container)
-                outputContainer.focus();
+                //outputContainer.focus();
             } catch (error) {
                 console.error('Markdown render error:', error);
                 outputContainer.textContent = `Error: ${error.message}`;
@@ -396,7 +396,6 @@ async function executeCell(cell) {
         const result = await response.json();
 
         // Remove aria-live for code cells to prevent double speaking
-        outputContainer.removeAttribute('aria-live');
 
         // Display output
         if (result.status === 'ok') {
@@ -458,6 +457,7 @@ function createCellElement(cellData) {
             <div class="cell-type-indicator" aria-live="polite">
                 <strong>Type:</strong> <span class="type-label">${cellType === 'markdown' ? 'Markdown' : 'Code'}</span>
             </div>
+            <div class="actions" aria-hidden="true">
             <button class="run-btn" data-action="executeCell" aria-label="Run cell ${cellIndex}">
                 Run<br><small>(Ctrl+Enter)</small>
             </button>
@@ -467,15 +467,18 @@ function createCellElement(cellData) {
             <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
                 Edit<br><small>(Enter)</small>
             </button>
+        </div>
         </td>
         <td class="cell-content">
-            <pre class="code" contenteditable="true" spellcheck="false" tabindex="-1"></pre>
-            <hr>
-            <output class="output" tabindex="0"></output>
-        </td>
+            <div role="group" aria-label="${cellType === "code"? 'code' : ''}">
+            <pre class="code" contenteditable="true" spellcheck="false"
+            tabindex="${cellType === "markdown"? -1 : 0}">
+            </pre>
+            <!--<hr>-->
+            <div aria-live="polite" class="output" tabindex="0"></div>
+        </div></td>
     `;
 
-    // Set source text (using textContent to avoid XSS)
     const codeContainer = row.querySelector('.code');
     codeContainer.textContent = source;
 
@@ -707,7 +710,7 @@ function handleCellClick(e) {
     const cell = findCell(e.target);
     if (not(cell)) return;
 
-    // Find action from clicked element or its parent
+    /*// Find action from clicked element or its parent
     const actionElement = e.target.dataset.action ? e.target : e.target.closest('[data-action]');
     const action = actionElement ? actionElement.dataset.action : null;
 
@@ -716,7 +719,7 @@ function handleCellClick(e) {
         performAction(action, cell);
         return;
     } // if action
-
+*/
     // Screen readers convert Enter/Space on focused elements to click events
     // So clicking on output (or its children, e.g. rendered markdown) should enter edit mode
     if (e.target.closest('.output')) {
