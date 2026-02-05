@@ -475,7 +475,7 @@ function createCellElement(cellData) {
             tabindex="${cellType === "markdown"? -1 : 0}">
             </pre>
             <!--<hr>-->
-            <div aria-live="polite" class="output" tabindex="0"></div>
+            <output class="output" tabindex="0">(No output yet)</output>
         </div></td>
     `;
 
@@ -747,7 +747,7 @@ function handleCellKeydown(e) {
     } // if has key
 } // handleCellKeydown
 
-function handleFocusIn(e) {
+/*function handleFocusIn(e) {
     const cell = findCell(e.target);
     if (not(cell)) return;
 
@@ -763,6 +763,7 @@ function handleFocusIn(e) {
         codeContainer.setAttribute('tabindex', '-1');
     } // if output
 } // handleFocusIn
+*/
 
 // ============================================================================
 // Event Listeners

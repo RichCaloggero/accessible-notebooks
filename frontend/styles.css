@@ -348,7 +348,7 @@ output {
 }
 
 output:empty::before {
-/*    content: "(No output yet)";*/
+    /*content: "(No output yet)";*/
     color: #999;
     font-style: italic;
 }
