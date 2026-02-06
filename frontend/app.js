@@ -1,7 +1,18 @@
 // Accessible Notebooks Frontend (Integrated Server Version)
+
+/// globals
+
 // For use with server_integrated.py - uses relative URLs
 
 const API_BASE = '/api';  // Relative URL - no CORS needed!
+
+const startKernelBtn = document.getElementById('start-kernel-btn');
+const restartKernelBtn = document.getElementById('restart-kernel-btn');
+const shutdownKernelBtn = document.getElementById('shutdown-kernel-btn');
+const kernelStatus = document.getElementById('kernel-status');
+const notebookTable = document.querySelector('.notebook tbody');
+
+let currentCell = null;
 
 // ============================================================================
 // Utility Functions
@@ -71,7 +82,12 @@ function getCellByIndex(n) {
     return document.querySelectorAll(".cell")[n];
 } // getCellByIndex
 
+function getCellIndex (cell) {
+return getAllCells(notebookTable).indexOf(cell);
+} // getCellIndex
+
 function findCell(element) {
+    if (not(element)) return null;
     return element.closest(".cell");
 } // findCell
 
@@ -105,18 +121,12 @@ function isToolbarContainer(x) {
 
 function isEditModeEnabled(cell) {
     const code = getCodeContainer(cell);
-    return code && code.getAttribute("contenteditable") === "true";
+    return code && not(code.hidden);
 } // isEditModeEnabled
 
 // ============================================================================
 // Elements
 // ============================================================================
-
-const startKernelBtn = document.getElementById('start-kernel-btn');
-const restartKernelBtn = document.getElementById('restart-kernel-btn');
-const shutdownKernelBtn = document.getElementById('shutdown-kernel-btn');
-const kernelStatus = document.getElementById('kernel-status');
-const notebookTable = document.querySelector('.notebook tbody');
 
 // File controls
 const notebookFileInput = document.getElementById('notebook-file-input');
@@ -284,9 +294,7 @@ function enableEditMode(cell) {
 
     // Show and enable the code container
     codeContainer.hidden = false;
-    codeContainer.setAttribute('contenteditable', 'true');
-    codeContainer.setAttribute('tabindex', '-1');
-    codeContainer.focus();
+codeContainer.focus();
 } // enableEditMode
 
 function disableEditMode(cell) {
@@ -295,9 +303,8 @@ function disableEditMode(cell) {
     const codeContainer = getCodeContainer(cell);
     const outputContainer = getOutputContainer(cell);
 
-    codeContainer.removeAttribute('contenteditable');
     codeContainer.hidden = true;
-    outputContainer.focus();
+    //outputContainer.focus();
 } // disableEditMode
 
 // ============================================================================
@@ -311,7 +318,7 @@ async function executeCell(cell) {
     const cellType = getCellType(cell);
     const code = codeContainer.textContent.trim();
 
-    console.log(`Executing cell, type: ${cellType}, code: ${code.substring(0, 50)}...`);
+//    console.log(`Executing cell, type: ${cellType}, code: ${code.substring(0, 50)}...`);
 
     if (not(code)) {
         return;
@@ -327,7 +334,7 @@ async function executeCell(cell) {
 
         // Handle markdown cells
         if (cellType === 'markdown') {
-            console.log('Rendering markdown client-side...');
+//            console.log('Rendering markdown client-side...');
 
             try {
                 // Normalize line endings: Windows CRLF to Unix LF
@@ -349,7 +356,7 @@ async function executeCell(cell) {
                 } // for line
                 cleanedMarkdown = resultLines.join('\n');
 
-                console.log('Cleaned markdown:', cleanedMarkdown);
+//                console.log('Cleaned markdown:', cleanedMarkdown);
 
                 // Render markdown to HTML using marked.js
                 let html = marked.parse(cleanedMarkdown);
@@ -357,7 +364,7 @@ async function executeCell(cell) {
                 // Remove whitespace between HTML tags
                 html = html.replace(/>\s+</g, '><');
 
-                console.log('Rendered HTML:', html);
+                //console.log('Rendered HTML:', html);
 
                 // Display the rendered HTML
                 outputContainer.innerHTML = html;
@@ -471,8 +478,7 @@ function createCellElement(cellData) {
         </td>
         <td class="cell-content">
             <div role="group" aria-label="${cellType === "code"? 'code' : ''}">
-            <pre class="code" contenteditable="true" spellcheck="false"
-            tabindex="${cellType === "markdown"? -1 : 0}">
+            <pre class="code" contenteditable="true" spellcheck="false" tabindex="0">
             </pre>
             <!--<hr>-->
             <output class="output" tabindex="0">(No output yet)</output>
@@ -529,13 +535,18 @@ function loadNotebookFromData(notebookData) {
         notebookTable.appendChild(cellElement);
     });
 
-    console.log(`Loaded ${notebookData.cells.length} cells`);
+    //console.log(`Loaded ${notebookData.cells.length} cells`);
 
 
 runAllMarkdownCells(getAllCells(notebookTable));
-makeAllToolbarsUnfocusable();
-getOutputContainer(getCellByIndex(0)).focus();
+//console.log("ran all markdown cells");
 
+makeAllToolbarsUnfocusable();
+//console.log("toolbars unfocusable");
+
+currentCell = getCellByIndex(0);
+getOutputContainer(currentCell).focus();
+//console.log("focused first cell");
 } // loadNotebookFromData
 
 function getAllCells (notebookTable) {
@@ -544,7 +555,10 @@ function getAllCells (notebookTable) {
 
 function runAllMarkdownCells (cells) {
     cells.filter(cell => getCellType(cell) === "markdown")
-    .forEach(cell => executeCell(cell)); 
+    .forEach(cell => {
+        executeCell(cell)
+    getCodeContainer(cell).hidden = true;
+}); 
 }
 
 function makeAllToolbarsUnfocusable () {
@@ -707,25 +721,18 @@ function performShortcut(keyText, cell) {
 // ============================================================================
 
 function handleCellClick(e) {
+    console.log("handleCellClick: ", e.target);
     const cell = findCell(e.target);
     if (not(cell)) return;
 
-    /*// Find action from clicked element or its parent
-    const actionElement = e.target.dataset.action ? e.target : e.target.closest('[data-action]');
-    const action = actionElement ? actionElement.dataset.action : null;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
 
-    if (action) {
-        e.preventDefault();
-        performAction(action, cell);
-        return;
-    } // if action
-*/
-    // Screen readers convert Enter/Space on focused elements to click events
-    // So clicking on output (or its children, e.g. rendered markdown) should enter edit mode
-    if (e.target.closest('.output')) {
+    //if(getCellType(cell) === "code") {
         enableEditMode(cell);
-    } // if output
-} // handleCellClick
+    //} // if
+    } // handleCellClick
 
 function handleCellKeydown(e) {
     const cell = findCell(e.target);
@@ -742,28 +749,27 @@ function handleCellKeydown(e) {
     } // if enter in code
 
     if (keymap.has(keyText)) {
-        e.preventDefault();
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
         performShortcut(keyText, cell);
     } // if has key
 } // handleCellKeydown
 
-/*function handleFocusIn(e) {
-    const cell = findCell(e.target);
-    if (not(cell)) return;
+function handleFocusIn(e) {
+    //console.log("handleFocusin: ", e);
+    const cellFrom = findCell(e.target);
+    if (not(cellFrom)) return;
+cellTo = findCell(e.relatedTarget);
+if (not(cellTo)) return;
+console.log("handleFocusin: cells current/from/to: ", getCellIndex(currentCell), getCellIndex(cellFrom), getCellIndex(cellTo));
 
-    if (isCodeContainer(e.target)) {
-        activeCell = cell;
-    } // if code container
 
-    // When output gains focus, hide code container
-    if (e.target.matches('.output')) {
-        const codeContainer = getCodeContainer(cell);
-        codeContainer.hidden = true;
-        codeContainer.contentEditable = 'false';
-        codeContainer.setAttribute('tabindex', '-1');
-    } // if output
-} // handleFocusIn
-*/
+if (cellTo !== cellFrom) {
+    disableEditMode(currentCell);
+    currentCell = cellFrom;
+} // if
+} //handleFocusIn
 
 // ============================================================================
 // Event Listeners
