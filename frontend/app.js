@@ -478,7 +478,7 @@ function createCellElement(cellData) {
         </td>
         <td class="cell-content">
             <div role="group" aria-label="${cellType === "code"? 'code' : ''}">
-            <pre class="code" contenteditable="true" spellcheck="false" tabindex="0">
+            <pre class="code" hidden contenteditable="true" spellcheck="false" tabindex="0">
             </pre>
             <!--<hr>-->
             <output class="output" tabindex="0">(No output yet)</output>
@@ -594,7 +594,7 @@ function handleFileLoad(e) {
                 notebookNameDisplay.textContent = currentNotebookName;
             } // if display
 
-            console.log(`Loaded notebook: ${file.name}`);
+            //console.log(`Loaded notebook: ${file.name}`);
         } catch (error) {
             console.error('Error parsing notebook:', error);
             alert(`Error loading notebook: ${error.message}`);
@@ -644,7 +644,7 @@ function saveNotebook() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    console.log(`Saved notebook: ${currentNotebookName}`);
+    //console.log(`Saved notebook: ${currentNotebookName}`);
 } // saveNotebook
 
 function newNotebook() {
@@ -662,7 +662,7 @@ function newNotebook() {
         notebookNameDisplay.textContent = currentNotebookName;
     } // if display
 
-    console.log('Created new notebook');
+    //console.log('Created new notebook');
 } // newNotebook
 
 function addNewCell() {
@@ -721,7 +721,7 @@ function performShortcut(keyText, cell) {
 // ============================================================================
 
 function handleCellClick(e) {
-    console.log("handleCellClick: ", e.target);
+    //console.log("handleCellClick: ", e.target);
     const cell = findCell(e.target);
     if (not(cell)) return;
 
@@ -762,7 +762,7 @@ function handleFocusIn(e) {
     if (not(cellFrom)) return;
 cellTo = findCell(e.relatedTarget);
 if (not(cellTo)) return;
-console.log("handleFocusin: cells current/from/to: ", getCellIndex(currentCell), getCellIndex(cellFrom), getCellIndex(cellTo));
+//console.log("handleFocusin: cells current/from/to: ", getCellIndex(currentCell), getCellIndex(cellFrom), getCellIndex(cellTo));
 
 
 if (cellTo !== cellFrom) {
@@ -799,4 +799,5 @@ if (notebookTable) {
 
 clearNotebook();
 checkStatus();
+document.querySelector("#notebook-file-input").focus();
 
