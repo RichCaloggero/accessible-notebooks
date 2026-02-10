@@ -65,30 +65,45 @@ Server starting on http://localhost:5000
 Open `frontend/index.html` in your web browser.
 
 You can do this by:
-- Double-clicking the file
-- Or using: `start frontend/index.html` (Windows)
+- open your browser
+- point it to http://localhost:5000
+   + be sure to explicitly specify http; some browser configurations will assume https: unless you explicitly say otherwise
+   
 
-### 5. Start the Kernel
+### 5. load notebook
+
+- focus on the "load notebook" button and click or press enter
+- choose a file from your computer and press enter;
+
+### 6. Start the Kernel
+
 
 In the browser:
 1. Navigate to the "Start Kernel" button (or press Tab until you reach it)
 2. Press Enter or click to start the kernel
 3. Wait for the announcement "Kernel started successfully"
 
-### 6. Run Code Cells
+### 7. Run Code Cells
 
 Each cell has:
-- A heading (e.g., "Cell 1") - navigate with H key in screen reader
+
 - A text area for code input
-- A "Run Cell" button
+- an area for output
+- A "Run Cell" button (keyboard or screen reader users can use control+enter)
 
 To execute a cell:
-- Navigate to the code textarea
+- tab to the cell
+   + if it's a markdown cell, the rendered text is read
+   + f it's a code cell, screen reader simply says "code"
+- press enter to edit (works for both code and markdown cells)
 - Type or edit your Python code
-- Tab to the "Run Cell" button and press Enter
-- OR press Ctrl+Enter while in the textarea
+- click the run cell button or press control+enter
+   + The output will appear below and be announced by your screen reader.
+- press tab to move to output area which you can read via screen reader in normal document mode
+   + shift+tab moves back into the code area
+- tabbing past the output area or shift+tabbing past the code area move to next / previous cell and hides the input area
+   + press enter again when on the cell to get back to the cell's input
 
-The output will appear below and be announced by your screen reader.
 
 ## Accessibility Features
 
@@ -96,6 +111,7 @@ The output will appear below and be announced by your screen reader.
 - Proper heading hierarchy (H1 → H2 → H3 → H4)
 - Landmark regions (header, main, footer)
 - Clear labels for all interactive elements
+- efficient keyboard commands and focus management
 
 ### ARIA Live Regions
 - Status announcements when cells execute
