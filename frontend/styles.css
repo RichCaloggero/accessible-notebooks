@@ -537,3 +537,11 @@ footer {
         border-bottom: 2px solid #ddd;
     }
 }
+
+#skip-link {opacity: 0;}
+#skip-link:focus {opacity: 1;}
+fieldset {border: none;}
+:focus {
+	outline: 4px solid #ffcc00;
+	outline-offset: 2px;
+	}

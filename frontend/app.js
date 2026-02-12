@@ -525,8 +525,6 @@ function loadNotebookFromData(notebookData) {
     clearNotebook();
 
     if (not(notebookData.cells) || notebookData.cells.length === 0) {
-        // Create one empty cell if notebook is empty
-        //addNewCell();
         return;
     } // if no cells
 
@@ -557,9 +555,8 @@ function runAllMarkdownCells (cells) {
     cells.filter(cell => getCellType(cell) === "markdown")
     .forEach(cell => {
         executeCell(cell)
-    getCodeContainer(cell).hidden = true;
 }); 
-}
+} // runAllMarkdownCells
 
 function makeAllToolbarsUnfocusable () {
     getAllCells(notebookTable)
@@ -676,8 +673,8 @@ function addNewCell() {
     notebookTable.appendChild(cellElement);
 
     // Focus the new cell's code container
-    const codeContainer = getCodeContainer(cellElement);
-    codeContainer.focus();
+    enableEditMode(cellElement);
+    getCodeContainer(cellElement).focus();
 
     return cellElement;
 } // addNewCell
@@ -696,12 +693,14 @@ const cellActions = new Map([
 const keymap = new Map([
     ["control enter", executeCell],
     ["enter", enableEditMode],
-    ["control space", toggleCellType]
+["escape", cell => {disableEditMode(cell); getOutputContainer(cell).focus();}],
+["control space", toggleCellType]
 ]); // keymap
 
 function performAction(action, cell) {
     if (not(action) || not(cell)) return;
-
+console.log("performing ", action, " on cell ", cell);
+	
     if (cellActions.has(action)) {
         cellActions.get(action)(cell);
     } else {
@@ -723,12 +722,19 @@ function performShortcut(keyText, cell) {
 function handleCellClick(e) {
     //console.log("handleCellClick: ", e.target);
     const cell = findCell(e.target);
-    if (not(cell)) return;
+	if (not(cell)) return;
 
-    e.preventDefault();
+	
+	e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
+	if (getCellToolbar(cell).contains(e.target) && e.target.dataset.action) {
+		performAction(e.target.dataset.action, cell);
+		return;
+	} // if
+		
+    
     //if(getCellType(cell) === "code") {
         enableEditMode(cell);
     //} // if
@@ -760,7 +766,7 @@ function handleFocusIn(e) {
     //console.log("handleFocusin: ", e);
     const cellFrom = findCell(e.target);
     if (not(cellFrom)) return;
-cellTo = findCell(e.relatedTarget);
+const cellTo = findCell(e.relatedTarget);
 if (not(cellTo)) return;
 //console.log("handleFocusin: cells current/from/to: ", getCellIndex(currentCell), getCellIndex(cellFrom), getCellIndex(cellTo));
 

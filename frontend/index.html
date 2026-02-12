@@ -9,6 +9,7 @@
     <script src="marked.min.js"></script>
 </head>
 <body>
+    <a id="skip-link" href="#notebook-cells">Skip to notebook cells</a>
     <header>
         <h1>Accessible Jupyter Notebooks</h1>
         <p>A screen reader friendly interface for Jupyter notebooks</p>
@@ -16,8 +17,7 @@
 
     <main>
         <!-- File controls -->
-        <section>
-            <h2 id="file-controls-heading">Notebook File</h2>
+        <fieldset><legend><h2>Notebook File</h2></legend>
 
             <div class="controls">
                 <label for="notebook-file-input" class="control-btn file-label">
@@ -31,11 +31,10 @@
                     Untitled.ipynb
                 </span>
             </div>
-        </section>
+        </fieldset>
 
         <!-- Kernel controls -->
-        <section>
-            <h2 id="controls-heading">Kernel Controls</h2>
+        <fieldset><legend><h2>Kernel Controls</h2></legend>
 
             <div class="controls">
                 <button id="start-kernel-btn" class="control-btn">Start Kernel</button>
@@ -45,133 +44,22 @@
                     Kernel: Not Started
                 </span>
             </div>
-        </section>
+        </fieldset>
 
         <!-- Notebook cells -->
-        <section>
-            <h2 id="notebook-heading">Notebook Cells</h2>
+        <fieldset><legend><h2>Notebook Cells</h2></legend>
 
-            <table class="notebook">
+        <a id="notebook-cells"></a>
+	    <table class="notebook">
                 <thead>
                     <tr>
                         <th scope="col">Actions</th>
-                        <th scope="col">cell</th>
+                        <th scope="col">cells</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Cell 1 -->
-                    <tr class="cell" data-type="code">
-                        <td class="toolbar">
-                            <div class="cell-type-indicator" aria-live="polite">
-                                <strong>Type:</strong> <span class="type-label">Code</span>
-                            </div>
-                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 1">
-                                Run<br><small>(Ctrl+Enter)</small>
-                            </button>
-                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
-                                Code/Markdown<br><small>(Ctrl+Space)</small>
-                            </button>
-                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
-                                Edit<br><small>(Enter)</small>
-                            </button>
-                        </td>
-                        <td class="cell-content">
-                            <pre
-                                class="code"
-                                contenteditable="true"
-                                spellcheck="false"
-                                tabindex="-1">2 + 2</pre>
-                            <hr>
-                            <output class="output" tabindex="0"></output>
-                        </td>
-                    </tr>
-
-                    <!-- Cell 2 -->
-                    <tr class="cell" data-type="code">
-                        <td class="toolbar">
-                            <div class="cell-type-indicator" aria-live="polite">
-                                <strong>Type:</strong> <span class="type-label">Code</span>
-                            </div>
-                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 2">
-                                Run<br><small>(Ctrl+Enter)</small>
-                            </button>
-                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
-                                Code/Markdown<br><small>(Ctrl+Space)</small>
-                            </button>
-                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
-                                Edit<br><small>(Enter)</small>
-                            </button>
-                        </td>
-                        <td class="cell-content">
-                            <pre
-                                class="code"
-                                contenteditable="true"
-                                spellcheck="false"
-                                tabindex="-1">print("Hello, world!")</pre>
-                            <hr>
-                            <output class="output" tabindex="-1"></output>
-                        </td>
-                    </tr>
-
-                    <!-- Cell 3 -->
-                    <tr class="cell" data-type="code">
-                        <td class="toolbar">
-                            <div class="cell-type-indicator" aria-live="polite">
-                                <strong>Type:</strong> <span class="type-label">Code</span>
-                            </div>
-                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 3">
-                                Run<br><small>(Ctrl+Enter)</small>
-                            </button>
-                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
-                                Code/Markdown<br><small>(Ctrl+Space)</small>
-                            </button>
-                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
-                                Edit<br><small>(Enter)</small>
-                            </button>
-                        </td>
-                        <td class="cell-content">
-                            <pre
-                                class="code"
-                                contenteditable="true"
-                                spellcheck="false"
-                                tabindex="-1">x = 42
-print(f"x = {x}")
-x * 2</pre>
-                            <hr>
-                            <output class="output" tabindex="-1"></output>
-                        </td>
-                    </tr>
-
-                    <!-- Cell 4 -->
-                    <tr class="cell" data-type="code">
-                        <td class="toolbar">
-                            <div class="cell-type-indicator" aria-live="polite">
-                                <strong>Type:</strong> <span class="type-label">Code</span>
-                            </div>
-                            <button class="run-btn" data-action="executeCell" aria-label="Run cell 4">
-                                Run<br><small>(Ctrl+Enter)</small>
-                            </button>
-                            <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
-                                Code/Markdown<br><small>(Ctrl+Space)</small>
-                            </button>
-                            <button class="edit-btn" data-action="enableEditMode" aria-label="Edit cell" style="display: none;">
-                                Edit<br><small>(Enter)</small>
-                            </button>
-                        </td>
-                        <td class="cell-content">
-                            <pre
-                                class="code"
-                                contenteditable="true"
-                                spellcheck="false"
-                                tabindex="-1">import math
-math.pi</pre>
-                            <hr>
-                            <output class="output" tabindex="-1"></output>
-                        </td>
-                    </tr>
-                </tbody>
+                <tbody></tbody>
             </table>
-        </section>
+        </fieldset>
     </main>
 
     <footer>
