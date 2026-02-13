@@ -806,5 +806,7 @@ if (notebookTable) {
 startKernel();
 clearNotebook();
 checkStatus();
-document.querySelector("#notebook-file-input").focus();
+
+// wait a bit to give kernel time to start; prevents screen reader announcements from clashing
+setTimeout(() => document.querySelector("#notebook-file-input").focus(), 2000);
 
