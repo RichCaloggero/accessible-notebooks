@@ -803,6 +803,7 @@ if (notebookTable) {
 // Initialize
 // ============================================================================
 
+startKernel();
 clearNotebook();
 checkStatus();
 document.querySelector("#notebook-file-input").focus();

@@ -3,7 +3,10 @@ Kernel Manager for Accessible Notebooks.
 Handles kernel lifecycle and code execution.
 """
 
+import re
 from jupyter_client import KernelManager
+
+ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 
 
 class NotebookKernelManager:
@@ -115,10 +118,12 @@ class NotebookKernelManager:
 
                         elif msg_type == 'error':
                             # An error occurred
+                            raw_tb = content.get('traceback', [])
+                            clean_tb = [ANSI_ESCAPE.sub('', line) for line in raw_tb]
                             result['error'] = {
                                 'ename': content.get('ename', 'Error'),
                                 'evalue': content.get('evalue', ''),
-                                'traceback': content.get('traceback', [])
+                                'traceback': clean_tb
                             }
                             result['status'] = 'error'
 

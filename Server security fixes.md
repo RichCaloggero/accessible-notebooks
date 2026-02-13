@@ -46,3 +46,4 @@ If the kernel fails during startup (e.g., `start_kernel()` succeeds but `wait_fo
 3. Returns the error message
 
 This prevents getting stuck in a state where the kernel can't be started because stale objects remain from a failed attempt.
+        
