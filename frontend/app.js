@@ -1,4 +1,4 @@
-// Accessible Notebooks Frontend (Integrated Server Version)
+// Accessible Notebooks Frontend
 
 /// globals
 
@@ -367,7 +367,7 @@ async function executeCell(cell) {
                 //console.log('Rendered HTML:', html);
 
                 // Display the rendered HTML
-                outputContainer.innerHTML = html;
+                outputContainer.innerHTML = DOMPurify.sanitize(html);
                 outputContainer.classList.add('markdown-rendered');
 
                 // Set aria-live="off" to prevent double speaking

@@ -37,6 +37,13 @@ class NotebookKernelManager:
                 'message': 'Kernel started successfully'
             }
         except Exception as e:
+            if self.km is not None:
+                try:
+                    self.km.shutdown_kernel(now=True)
+                except Exception:
+                    pass
+            self.km = None
+            self.client = None
             return {
                 'status': 'error',
                 'message': f'Failed to start kernel: {str(e)}'
