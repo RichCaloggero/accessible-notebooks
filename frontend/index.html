@@ -27,7 +27,6 @@
                 </label>
                 <button id="save-notebook-btn" class="control-btn" accessKey="s">Save Notebook</button>
                 <button id="new-notebook-btn" class="control-btn" accessKey="n">New Notebook</button>
-                <button id="add-cell-btn" class="control-btn" accessKey="a">Add Cell</button>
                 <span id="notebook-name" class="status-indicator" role="status">
                     Untitled.ipynb
                 </span>
@@ -47,11 +46,15 @@
             </div>
         </fieldset>
 
-        <!-- Notebook cells -->
-        <fieldset><legend><h2>Notebook Cells</h2></legend>
+        <!-- Notebook  -->
+        <fieldset class="notebook"><legend><h2>Notebook Cells</h2></legend>
+<div class="controls">
+<button class="add-cell control-btn" data-action="addCell" accessKey="a">Add Cell</button>
+<button class="run-all control-btn" data-action="runAllCells" accessKey="r">Run all cells</button>
+</div>
 
-        <a id="notebook-cells"></a>
-	    <table class="notebook">
+<a id="notebook-cells"></a>
+	    <table>
                 <thead>
                     <tr>
                         <th aria-hidden="true" scope="col">Actions</th>
@@ -60,7 +63,7 @@
                 </thead>
                 <tbody></tbody>
             </table>
-        </fieldset>
+        </fieldset><!-- .notebook -->
     </main>
 
     <footer>

@@ -60,6 +60,8 @@ def serve_static(path):
 
 
 # API endpoints (same as before)
+#@limiter.limit("30/minute") - put after @app.route lines
+
 @app.route('/api/status', methods=['GET'])
 @limiter.limit("30/minute")
 def status():
@@ -134,6 +136,7 @@ def shutdown_kernel():
 
 
 @app.route('/health', methods=['GET'])
+@limiter.limit("30/minute")
 def health():
     return jsonify({
         'status': 'healthy',

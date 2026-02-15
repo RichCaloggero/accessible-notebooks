@@ -2,7 +2,6 @@
 
 /// globals
 
-// For use with server_integrated.py - uses relative URLs
 
 const API_BASE = '/api';  // Relative URL - no CORS needed!
 
@@ -10,9 +9,11 @@ const startKernelBtn = document.getElementById('start-kernel-btn');
 const restartKernelBtn = document.getElementById('restart-kernel-btn');
 const shutdownKernelBtn = document.getElementById('shutdown-kernel-btn');
 const kernelStatus = document.getElementById('kernel-status');
-const notebookTable = document.querySelector('.notebook tbody');
+const notebook = document.querySelector(".notebook");
+const notebookTable = notebook.querySelector('table tbody');
 
 let currentCell = null;
+let clipboard = null;
 
 // ============================================================================
 // Utility Functions
@@ -75,8 +76,12 @@ function hasModifierKeys(e) {
 } // hasModifierKeys
 
 // ============================================================================
-// Cell Navigation & Accessors
+// notebook, and Cell Navigation, & Accessors
 // ============================================================================
+
+function getNotebookToolbar (notebook) {
+	return notebook && notebook.querySelector(".controls");
+} // getNotebookToolbar
 
 function getCellByIndex(n) {
     return document.querySelectorAll(".cell")[n];
@@ -111,6 +116,15 @@ function isCell(x) {
     return x && x.matches && x.matches(".cell");
 } // isCell
 
+function isFirstCell (cell) {
+	return cell && cell === getAllCells(notebookTable)[0];
+} // isFirstCell
+
+function isLastCell (cell) {
+	return cell && cell === getAllCells(notebookTable).slice(-1)[0];
+} // isLastCell
+
+
 function isCodeContainer(x) {
     return x && x.matches && x.matches(".code");
 } // isCodeContainer
@@ -123,6 +137,14 @@ function isEditModeEnabled(cell) {
     const code = getCodeContainer(cell);
     return code && not(code.hidden);
 } // isEditModeEnabled
+
+function isMarkdownCell (cell) {
+	return isCell(cell) && getCellType(cell) === "markdown";
+} // isMarkdownCell
+
+function isCodeCell (cell) {
+	return isCell(cell) && getCellType(cell) === "code";
+} // isCodeCell
 
 // ============================================================================
 // Elements
@@ -272,6 +294,32 @@ function toggleCellType(cell) {
     //console.log(`Toggling cell from ${currentType} to ${newType}`);
     setCellType(cell, newType);
 } // toggleCellType
+
+function cutCell (cell) {
+	const newFocus = cell.nextElementSibling || cell.previousElementSibling || document.querySelector(".add-cell");
+console.log("cut: ", cell, newFocus);
+	cell.parentElement.removeChild(cell);
+	clipboard = cell;
+	getOutputContainer(newFocus).focus();
+} // cutCell
+
+function insertCell (cell) {
+	if (not(clipboard)) return;
+console.log("insert: ", clipboard, cell);
+
+	cell.insertAdjacentElement("beforeBegin", clipboard);
+	getOutputContainer(clipboard).focus();
+clipboard = null;
+	} // insertCell
+
+function appendCell (cell) {
+	if (not(clipboard)) return;
+console.log("append: ", clipboard, cell);
+	cell.insertAdjacentElement("afterEnd", clipboard);
+getOutputContainer(clipboard).focus();
+	clipboard = null;
+} // appendCell
+
 
 // ============================================================================
 // Cell Mode Functions
@@ -465,7 +513,10 @@ function createCellElement(cellData) {
                 <strong>Type:</strong> <span class="type-label">${cellType === 'markdown' ? 'Markdown' : 'Code'}</span>
             </div>
             <div class="actions" aria-hidden="true">
-            <button class="run-btn" data-action="executeCell" aria-label="Run cell ${cellIndex}">
+            <button class="cut control-btn" data-action="cutCell">Cut</button>
+<button class="insert  control-btn" data-action="insertCell">Insert</button>
+<button class="append control-btn" data-action="appendCell">Append</button>
+<button class="run-btn" data-action="executeCell" aria-label="Run cell">
                 Run<br><small>(Ctrl+Enter)</small>
             </button>
             <button class="toggle-type-btn" data-action="toggleCellType" aria-label="Toggle cell type (Ctrl+Space)">
@@ -536,7 +587,7 @@ function loadNotebookFromData(notebookData) {
     //console.log(`Loaded ${notebookData.cells.length} cells`);
 
 
-runAllMarkdownCells(getAllCells(notebookTable));
+runAllMarkdownCells();
 //console.log("ran all markdown cells");
 
 makeAllToolbarsUnfocusable();
@@ -551,12 +602,21 @@ function getAllCells (notebookTable) {
     return [...notebookTable.querySelectorAll(".cell")];
 } // getAllCells
 
-function runAllMarkdownCells (cells) {
-    cells.filter(cell => getCellType(cell) === "markdown")
+async function runAllCells () {
+	console.log("runAllCells: ...");
+const cells = getAllCells(notebookTable);
+	for (const cell of cells) {
+		await executeCell(cell);
+	} // for
+	} // runAllCells
+
+function runAllMarkdownCells () {
+    getAllCells(notebookTable).filter(cell => isMarkdownCell(cell))
     .forEach(cell => {
         executeCell(cell)
 }); 
 } // runAllMarkdownCells
+
 
 function makeAllToolbarsUnfocusable () {
     getAllCells(notebookTable)
@@ -652,7 +712,7 @@ function newNotebook() {
     } // if has cells
 
     clearNotebook();
-    addNewCell();
+    addCell();
 
     currentNotebookName = 'Untitled.ipynb';
     if (notebookNameDisplay) {
@@ -662,7 +722,7 @@ function newNotebook() {
     //console.log('Created new notebook');
 } // newNotebook
 
-function addNewCell() {
+function addCell (cell = null) {
     const cellData = {
         cell_type: 'code',
         source: '',
@@ -670,39 +730,61 @@ function addNewCell() {
     };
 
     const cellElement = createCellElement(cellData);
-    notebookTable.appendChild(cellElement);
+    
+cell? cell.insertAdjacentElement("afterEnd", cellElement) :     notebookTable.appendChild(cellElement);
 
     // Focus the new cell's code container
     enableEditMode(cellElement);
     getCodeContainer(cellElement).focus();
 
     return cellElement;
-} // addNewCell
+} // addCell
 
 // ============================================================================
 // Action & Keymap System
 // ============================================================================
 
+const notebookActions = new Map([
+["runAllCells", runAllCells],
+["addCell", addCell],
+]); // notebookActions
+
+	
 const cellActions = new Map([
     ["executeCell", executeCell],
     ["enableEditMode", enableEditMode],
+    ["disableEditMode", disableEditMode],
     ["toggleCellType", toggleCellType],
-    ["disableEditMode", disableEditMode]
+    ["cutCell", cutCell],
+    ["insertCell", insertCell],
+    ["appendCell", appendCell],
 ]); // cellActions
 
 const keymap = new Map([
     ["control enter", executeCell],
     ["enter", enableEditMode],
 ["escape", cell => {disableEditMode(cell); getOutputContainer(cell).focus();}],
-["control space", toggleCellType]
+["control space", toggleCellType],
+["control x", cutCell],
+["control shift v", insertCell],
+["control v", appendCell],
 ]); // keymap
+
+function performNotebookAction (action) {
+if (notebookActions.has(action)) {
+	console.log("performing ", action, " on notebook");
+	notebookActions.get(action)();
+	return;
+	} // if
+} // performNotebookAction
 
 function performAction(action, cell) {
     if (not(action) || not(cell)) return;
-console.log("performing ", action, " on cell ", cell);
 	
-    if (cellActions.has(action)) {
-        cellActions.get(action)(cell);
+	
+if (cellActions.has(action)) {
+	console.log("performing ", action, " on cell ", cell);
+cellActions.get(action)(cell);
     } else {
         console.error(`${action} is an invalid cell action`);
     } // if has action
@@ -719,6 +801,10 @@ function performShortcut(keyText, cell) {
 // Event Handlers
 // ============================================================================
 
+function handleNotebookClick (e) {
+	if (getNotebookToolbar(notebook).contains(e.target)) performNotebookAction(e.target.dataset.action);
+} // handleNotebookClick
+	
 function handleCellClick(e) {
     //console.log("handleCellClick: ", e.target);
     const cell = findCell(e.target);
@@ -729,12 +815,12 @@ function handleCellClick(e) {
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-	if (getCellToolbar(cell).contains(e.target) && e.target.dataset.action) {
+	if (e.target.dataset.action && getCellToolbar(cell).contains(e.target)) {
 		performAction(e.target.dataset.action, cell);
 		return;
 	} // if
-		
-    
+
+
     //if(getCellType(cell) === "code") {
         enableEditMode(cell);
     //} // if
@@ -790,11 +876,13 @@ shutdownKernelBtn.addEventListener('click', shutdownKernel);
 if (notebookFileInput) notebookFileInput.addEventListener('change', handleFileLoad);
 if (saveNotebookBtn) saveNotebookBtn.addEventListener('click', saveNotebook);
 if (newNotebookBtn) newNotebookBtn.addEventListener('click', newNotebook);
-if (addCellBtn) addCellBtn.addEventListener('click', addNewCell);
 
 // Notebook table event delegation (all events bubble)
+
+notebook.addEventListener('click', handleNotebookClick);
+
 if (notebookTable) {
-    notebookTable.addEventListener('click', handleCellClick);
+    notebookTable.addEventListener("click", handleCellClick);
     notebookTable.addEventListener('keydown', handleCellKeydown);
     notebookTable.addEventListener('focusin', handleFocusIn);
 } // if notebookTable
