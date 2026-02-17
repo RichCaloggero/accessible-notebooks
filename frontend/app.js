@@ -801,8 +801,8 @@ const keymap = new Map([[
 "control v",
 {function: appendCell, help: "Insert clipboard contents after current cell"}
 ], [
-	"?",
-{function: displayKeyboardHelp, help: "Show keyboard help"}
+	"f1",
+{function: displayKeyboardHelp, help: "Show keyboard help; focus returns to the cell with focus when the shortcut was pressed"}
 ]]); // keymap
 
 function performNotebookAction (action) {
@@ -833,12 +833,13 @@ function performShortcut(keyText, cell) {
 } // performShortcut
 
 function createKeyboardHelpDialog () {
-const documentation = [...extractDocumentation(keymap), ...extractDocumentShortcuts()];
+const documentation = [...extractDocumentShortcuts(), ...extractDocumentation(keymap)];
 	const dialog = document.createElement("dialog");
-	dialog.insertAdjacentHTML("beforeEnd", `
+	dialog.id = "keyboard-help";
+    dialog.insertAdjacentHTML("beforeEnd", `
 	<div>
 	<h2>Keyboard Shortcuts</h2>
-	<button popoverTarget="keyboard-shortcuts" popoverTargetAction="hide">Close</button>
+	<button commandFor="keyboard-help" command="close">Close</button>
 	</div>
 	<div><table class="content">
 <tr><th>function</th> <th>shortcut</th></tr>
@@ -847,7 +848,7 @@ const documentation = [...extractDocumentation(keymap), ...extractDocumentShortc
 	
 	for (entry of documentation) {
 	dialog.querySelector(".content").insertAdjacentHTML("beforeEnd",
-		`<th>${entry[1]}</th> <td>${entry[0]}</td>\n`
+		`<tr><th>${entry[1]}</th> <td>${entry[0]}</td></tr>\n`
 		); // html
 			} // for
 document.body.insertAdjacentElement("beforeEnd", dialog);

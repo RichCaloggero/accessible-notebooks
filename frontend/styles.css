@@ -456,6 +456,49 @@ footer {
     pointer-events: none;
 }
 
+/* Keyboard help dialog */
+dialog {
+    border: 3px solid #0066cc;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 700px;
+    width: 90%;
+    font-size: 1rem;
+    color: #1a1a1a;
+    background-color: #ffffff;
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+dialog h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #0066cc;
+}
+
+dialog table.content {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+dialog table.content th,
+dialog table.content td {
+    padding: 10px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+dialog table.content th {
+    font-weight: bold;
+    color: #333;
+}
+
+dialog table.content tr:hover {
+    background-color: rgba(0, 102, 204, 0.05);
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
     body {
