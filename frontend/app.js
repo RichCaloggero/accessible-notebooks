@@ -744,36 +744,71 @@ cell? cell.insertAdjacentElement("afterEnd", cellElement) :     notebookTable.ap
 // Action & Keymap System
 // ============================================================================
 
-const notebookActions = new Map([
-["runAllCells", runAllCells],
-["addCell", addCell],
-]); // notebookActions
+const notebookActions = new Map([[
+"runAllCells",
+{function: runAllCells, help: "Run all cells in notebook"}
+	],[
+	"addCell", 
+{function: addCell, help: "Add a new cell following currently focused cell"}
+],[
+"keyboardHelp", 
+{function: displayKeyboardHelp, help: "Generate this help"}
+]]); // notebookActions
 
 	
-const cellActions = new Map([
-    ["executeCell", executeCell],
-    ["enableEditMode", enableEditMode],
-    ["disableEditMode", disableEditMode],
-    ["toggleCellType", toggleCellType],
-    ["cutCell", cutCell],
-    ["insertCell", insertCell],
-    ["appendCell", appendCell],
-]); // cellActions
+const cellActions = new Map([[
+"executeCell", 
+{function: executeCell, help: "Execute current cell"}
+	],[
+	"enableEditMode", 
+	{function: enableEditMode, help: "edit currently focused cell"}
+	], [
+	"disableEditMode", 
+	{function: disableEditMode, help: "Disable editing of current cell"}
+	], [
+	"toggleCellType", 
+	{function: toggleCellType, help: "Toggle cell's type between markdown and code"}
+		], [
+		"cutCell", 
+		{function: cutCell, help: "remove current cell and put it on the clipboard"}
+], [
+		"insertCell",
+			{function: insertCell, help: "Insert clipboard contents before current cell"}
+				], [
+				"appendCell",
+				{function: appendCell, help: "Insert clipboard contents after current cell"}
+]]); // cellActions
 
-const keymap = new Map([
-    ["control enter", executeCell],
-    ["enter", enableEditMode],
-["escape", cell => {disableEditMode(cell); getOutputContainer(cell).focus();}],
-["control space", toggleCellType],
-["control x", cutCell],
-["control shift v", insertCell],
-["control v", appendCell],
-]); // keymap
+const keymap = new Map([[
+"control enter",
+{function: executeCell, help: "Execute current cell"}
+], [
+"enter",
+{function: enableEditMode, help: "Edit current Cell"}
+], [
+"escape",
+{function: cell => {disableEditMode(cell); getOutputContainer(cell).focus();}, help: "Disable editing of current cell"}
+], [
+"control space",
+{function: toggleCellType, help: "Toggle cell's type between markdown and code"}
+], [
+"control x",
+{function: cutCell, help: "Remove current cell and put it on the clipboard"}
+], [
+"control shift v",
+{function: insertCell, help: "Insert clipboard contents before current cell"}
+], [
+"control v",
+{function: appendCell, help: "Insert clipboard contents after current cell"}
+], [
+	"?",
+{function: displayKeyboardHelp, help: "Show keyboard help"}
+]]); // keymap
 
 function performNotebookAction (action) {
 if (notebookActions.has(action)) {
 	console.log("performing ", action, " on notebook");
-	notebookActions.get(action)();
+	notebookActions.get(action).function();
 	return;
 	} // if
 } // performNotebookAction
@@ -784,7 +819,7 @@ function performAction(action, cell) {
 	
 if (cellActions.has(action)) {
 	console.log("performing ", action, " on cell ", cell);
-cellActions.get(action)(cell);
+cellActions.get(action).function(cell);
     } else {
         console.error(`${action} is an invalid cell action`);
     } // if has action
@@ -793,10 +828,54 @@ cellActions.get(action)(cell);
 function performShortcut(keyText, cell) {
     if (not(cell)) return;
     if (keymap.has(keyText)) {
-        keymap.get(keyText)(cell);
+        keymap.get(keyText).function(cell);
     } // if has key
 } // performShortcut
 
+function createKeyboardHelpDialog () {
+const documentation = [...extractDocumentation(keymap), ...extractDocumentShortcuts()];
+	const dialog = document.createElement("dialog");
+	dialog.insertAdjacentHTML("beforeEnd", `
+	<div>
+	<h2>Keyboard Shortcuts</h2>
+	<button popoverTarget="keyboard-shortcuts" popoverTargetAction="hide">Close</button>
+	</div>
+	<div><table class="content">
+<tr><th>function</th> <th>shortcut</th></tr>
+</table></div>
+	`); // dialog
+	
+	for (entry of documentation) {
+	dialog.querySelector(".content").insertAdjacentHTML("beforeEnd",
+		`<th>${entry[1]}</th> <td>${entry[0]}</td>\n`
+		); // html
+			} // for
+document.body.insertAdjacentElement("beforeEnd", dialog);
+return dialog;
+		} // createKeyboardHelpDialog
+		
+function displayKeyboardHelp () {
+keyboardHelpDialog.showModal();
+			} // displayKeyboardHelp
+
+function extractDocumentShortcuts () {
+return [...document.querySelectorAll("[accessKey]")]
+	.map(element => [element.getAttribute("accessKey"), (element.dataset.action || element.dataset.help || element.textContent)])
+	.map(entry => [`alt+shift+${entry[0]} in firefox, alt+${entry[0]} in chrome and safari`,
+	cellActions.has(entry[1])? cellActions.get(entry[1]).help
+	: notebookActions.has(entry[1])? notebookActions.get(entry[1]).help
+	: entry[1]
+	]);
+	} // extractDocumentShortcuts
+
+			
+function extractDocumentation (keymap) {
+return [...keymap.entries()]
+	.map(entry => [entry[0], entry[1].help]);
+	} // extractDocumentation 
+	
+	
+		
 // ============================================================================
 // Event Handlers
 // ============================================================================
@@ -863,6 +942,7 @@ if (cellTo !== cellFrom) {
 } // if
 } //handleFocusIn
 
+
 // ============================================================================
 // Event Listeners
 // ============================================================================
@@ -891,6 +971,7 @@ if (notebookTable) {
 // Initialize
 // ============================================================================
 
+const keyboardHelpDialog = createKeyboardHelpDialog (keymap);
 startKernel();
 clearNotebook();
 checkStatus();

@@ -23,7 +23,7 @@
             <div class="controls">
                 <label for="notebook-file-input" class="control-btn file-label">
                     Load Notebook
-                    <input type="file" id="notebook-file-input" accept=".ipynb" class="sr-only" accessKey="l">
+                    <input type="file" id="notebook-file-input" accept=".ipynb" class="sr-only" accessKey="l" data-help="load notebook">
                 </label>
                 <button id="save-notebook-btn" class="control-btn" accessKey="s">Save Notebook</button>
                 <button id="new-notebook-btn" class="control-btn" accessKey="n">New Notebook</button>
@@ -51,6 +51,7 @@
 <div class="controls">
 <button class="add-cell control-btn" data-action="addCell" accessKey="a">Add Cell</button>
 <button class="run-all control-btn" data-action="runAllCells" accessKey="r">Run all cells</button>
+<button class="keyboard-help" data-action="keyboardHelp" accessKey="h">Keyboard help</button>
 </div>
 
 <a id="notebook-cells"></a>
@@ -70,6 +71,7 @@
         <p>Accessible Notebooks - Built for screen reader users</p>
     </footer>
 
-    <script src="app.js"></script>
+
+<script src="app.js"></script>
 </body>
 </html>
